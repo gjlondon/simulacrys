@@ -24,6 +24,10 @@ case class Inventory(contents: List[Resource]) {
   def itemCounts: Map[Resource, Int] = {
     contents.groupBy(identity).mapValues(_.size)
   }
+
+  def +(newInventory: Inventory): Inventory = {
+    Inventory(contents ++ newInventory.contents)
+  }
 }
 
 object Inventory {

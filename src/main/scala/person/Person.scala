@@ -5,9 +5,7 @@ import inventory.Inventory
 import location.Location
 import meal.Meal
 import resource.{Carbs, Fat, Protein}
-import status.{Fine, HealthStatus, Robust}
-
-import scala.util.Random
+import status._
 
 sealed trait Person {
   val name: String
@@ -46,14 +44,18 @@ case class Commoner(name: String, inventory: Inventory,
 
     meal match {
       case None => this.copy(health = health.nextWorst)
-      case Some(eatenMeal) => this.copy(inventory = inventory.deductMeal(eatenMeal))
+      case Some(eatenMeal) => this.copy(
+        inventory = inventory.deductMeal(eatenMeal),
+        health = health.nextBest
+      )
     }
+  }
 
-//    val oldFat = inventory.getOrElse(Fat, 0)
-//    val newFat = oldFat - 1
-//    val newInventory = inventory - Fat + (Fat -> newFat)
-    // TODO update inventory
-
+  def farm(): Commoner = {
+    println(s"$name is farming")
+    val produce = Inventory(List(Protein, Fat, Carbs))
+    val newInventory = inventory + produce
+    this.copy(inventory = newInventory)
   }
 
   def candidateMeal(fromComponents: Inventory, requiredCalories: Int, size: Int = 1): Option[Meal] = {
@@ -75,18 +77,21 @@ case class Commoner(name: String, inventory: Inventory,
     }
   }
 
-  def party(): Unit = {
+  def party(): Commoner = {
     relax()
+    this
   }
 
   override def relax(): Unit = {
     println(s"$name is having a good time")
   }
 
-  override def act(): Commoner = health match {
-    case Robust =>
-      party()
-      this
-    case _ => eat()
+  override def act(): Commoner = {
+    val afterEating = eat()
+
+    afterEating.health match {
+      case Robust | Fine => afterEating.party()
+      case Sick | Poor => afterEating.farm()
+    }
   }
 }

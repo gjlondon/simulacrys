@@ -1,8 +1,9 @@
 import demographic.{Adult, Female, Male}
 import inventory.Inventory
 import location.City
-import person.Commoner
+import person.{Commoner, Person}
 import resource.{Fat, Protein}
+import status.Dead
 
 object Main extends App {
   override def main(args: Array[String]): Unit = {
@@ -16,15 +17,25 @@ object Main extends App {
     val alice = Commoner("Alice", Inventory.fromManifest(Map(Fat -> 10, Protein -> 5)),
       location = waterdeep, age = Adult, gender = Female)
 
-    var populace = Set(alice, bob, carl)
+    val startingPopulace: Set[Person] = Set(alice, bob, carl)
+    var livingPopulace = startingPopulace
 
-
-    0 to 10 foreach { tick =>
-      populace = populace.map { p =>
+    0 to 20 foreach { tick =>
+      livingPopulace = livingPopulace.filterNot(person => person.health == Dead)
+      livingPopulace = livingPopulace.map { p =>
         p.act()
       }
-      println(populace)
+      println(s"Round $tick:")
+      printStatus(livingPopulace)
     }
+  }
 
+  def printStatus(populace: Set[Person]): Unit = {
+    for {
+      person <- populace
+    } {
+      println(s"${person.name} in ${person.location.name} is ${person.health}")
+
+    }
   }
 }

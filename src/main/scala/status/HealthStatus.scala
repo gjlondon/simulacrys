@@ -10,6 +10,16 @@ sealed trait HealthStatus {
       case Dead => Dead
     }
   }
+
+  val nextBest: HealthStatus = {
+    this match {
+      case Robust => Robust
+      case Fine => Robust
+      case Poor => Fine
+      case Sick => Poor
+      case Dead => Dead
+    }
+  }
 }
 
 case object Robust extends HealthStatus
