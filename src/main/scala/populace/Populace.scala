@@ -44,7 +44,7 @@ object Populace {
   }
 
   def examplePop: Populace = {
-    val waterdeep = City(name = "Waterdeep", latitude = 5, longitude = 5)
+    val waterdeep = City(name = "Waterdeep")
     val bob = Commoner("Bob", Inventory.fromManifest(Map(Fat -> 30, Protein -> 20)),
       location = waterdeep, age = Adult, gender = Male)
     val carl = Commoner("Carl", Inventory.fromManifest(Map(Fat -> 20, Protein -> 10)),
