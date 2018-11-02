@@ -6,7 +6,9 @@ import populace.Populace
 import scala.util.Random
 
 object LocationTypes {
-  type VectorGrid = Vector[Vector[Location]]
+  // intended to represent a 2D grid, but I realized that indexing
+  // tricks can make it appear 2D, while actually storing in 1D makes mapping etc easier
+  type VectorGrid = Vector[Location]
 }
 
 import LocationTypes.VectorGrid
@@ -22,35 +24,29 @@ class World private (startingGrid: Grid) {
 
 object World {
   def farmWorld: World = new World(startingGrid = Grid.allFarms)
-
+  def cityWorld: World = new World(startingGrid = Grid.allCities)
   def fromGrid(grid: Grid): World = new World(startingGrid = grid)
+  def fromLocations(locations: VectorGrid): World = new World(Grid(locations))
+  def randomWorld: World = if (Random.nextInt(1) == 1) World.farmWorld else World.cityWorld
 }
 
-class Grid private (startingPositions: VectorGrid) {
+class Grid private (val positions: VectorGrid) {
   def fullPopulace: Populace = {
-    println("generating populace")
-    val locations = for {
-      col <- startingPositions
-      loc <- col
-    } yield loc
-    println(locations)
-    locations.foldLeft(Populace.empty) { (a, loc) =>
+    positions.foldLeft(Populace.empty) { (a, loc) =>
       a ++ loc.populace
     }
   }
-
-  val positions: VectorGrid = startingPositions
 }
 
 object Grid {
 
-  private def apply(startingPositions: VectorGrid): Grid = {
-    new Grid(startingPositions = startingPositions)
+  def apply(positions: VectorGrid): Grid = {
+    new Grid(positions = positions)
   }
 
   def fillGrid[T <: Location](withElem: => T, size: Int = 10): Grid = {
-    val contents: VectorGrid = Vector.fill[T](n1 = size, n2 = size)(withElem)
-    Grid(contents)
+    val positions: VectorGrid = Vector.fill[T](size * size)(withElem)
+    Grid(positions)
   }
 
   def allFarms: Grid = {
