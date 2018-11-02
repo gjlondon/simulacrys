@@ -7,10 +7,11 @@ import meal.Meal
 import resource.{Carbs, Fat, Protein}
 import status._
 
+import scala.util.Random
+
 sealed trait Person {
   val name: String
   val inventory: Inventory
-  val location: Location
   val health: HealthStatus
   val age: AgeBracket
   val gender: Gender
@@ -34,7 +35,7 @@ sealed trait Person {
 
 
 case class Commoner(name: String, inventory: Inventory,
-                    location: Location, age: AgeBracket, gender: Gender,
+                    age: AgeBracket, gender: Gender,
                     health: HealthStatus = Fine) extends Person {
   override def eat(): Commoner = {
     val meal = candidateMeal(
@@ -94,4 +95,11 @@ case class Commoner(name: String, inventory: Inventory,
       case Sick | Poor => afterEating.farm()
     }
   }
+}
+
+object PersonNames {
+  val names = List("Abrielle",
+    "Adair", "Adara", "Adriel", "Aiyana", "Alissa", "Alixandra", "Altair", "Amara", "Anatola", "Anya", "Arcadia", "Ariadne", "Arianwen", "Aurelia", "Aurelian", "Aurelius", "Avalon", "Acalia", "Alaire", "Auristela", "Bastian", "Breena", "Brielle", "Briallan", "Briseis", "Cambria", "Cara", "Carys", "Caspian", "Cassia", "Cassiel", "Cassiopeia", "Cassius", "Chaniel", "Cora", "Corbin", "Cyprian", "Daire", "Darius", "Destin", "Drake", "Drystan", "Dagen", "Devlin", "Devlyn", "Eira", "Eirian", "Elysia", "Eoin", "Evadne", "Eliron", "Evanth", "Fineas", "Finian", "Fyodor", "Gareth", "Gavriel", "Griffin", "Guinevere", "Gaerwn", "Ginerva", "Hadriel", "Hannelore", "Hermione", "Hesperos", "Iagan", "Ianthe", "Ignacia", "Ignatius", "Iseult", "Isolde", "Jessalyn", "Kara", "Kerensa", "Korbin", "Kyler", "Kyra", "Katriel", "Kyrielle", "Leala", "Leila", "Lilith", "Liora", "Lucien", "Lyra", "Leira", "Liriene", "Liron", "Maia", "Marius", "Mathieu", "Mireille", "Mireya", "Maylea", "Meira", "Natania", "Nerys", "Nuriel", "Nyssa", "Neirin", "Nyfain", "Oisin", "Oralie", "Orion", "Orpheus", "Ozara", "Oleisa", "Orinthea", "Peregrine", "Persephone", "Perseus", "Petronela", "Phelan", "Pryderi", "Pyralia", "Pyralis", "Qadira", "Quintessa", "Quinevere", "Raisa", "Remus", "Rhyan", "Rhydderch", "Riona", "Renfrew", "Saoirse", "Sarai", "Sebastian", "Seraphim", "Seraphina", "Sirius", "Sorcha", "Saira", "Sarielle", "Serian", "Tavish", "Tearlach", "Terra", "Thalia", "Thaniel", "Theia", "Torian", "Torin", "Tressa", "Tristana", "Uriela", "Urien", "Ulyssia", "Vanora", "Vespera", "Vasilis", "Xanthus", "Xara", "Xylia", "Yadira", "Yseult", "Yakira", "Yeira", "Yeriel", "Yestin", "Zaira", "Zephyr", "Zora", "Zorion", "Zaniel", "Zarek")
+
+  def nextName: String = names(Random.nextInt(names.length))
 }

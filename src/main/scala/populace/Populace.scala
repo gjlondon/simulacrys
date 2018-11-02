@@ -3,11 +3,12 @@ package populace
 import demographic.{Adult, Female, Male}
 import inventory.Inventory
 import location.City
-import person.{Commoner, Person}
-import resource.{Fat, Protein}
+import person.{Commoner, Person, PersonNames}
+import resource.{Carbs, Fat, Protein}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{SetLike, mutable}
+import scala.util.Random
 
 
 class Populace(seq : Person*) extends Set[Person]
@@ -43,14 +44,28 @@ object Populace {
     def apply(): mutable.Builder[A, Populace] = newBuilder
   }
 
+  def randomPop(ofSize: Int): Populace = {
+    val popSize = Random.nextInt(10)
+    val randomPeople = (0 to popSize) map { idx =>
+      val startingIventory = Inventory.fromManifest(
+        Map(
+          Fat -> Random.nextInt(30),
+          Protein -> Random.nextInt(30),
+          Carbs -> Random.nextInt(30)
+        ))
+      val newPerson = Commoner(PersonNames.nextName, startingIventory, age = Adult, gender = Male)
+      newPerson
+    }
+    Populace(randomPeople: _*)
+  }
+
   def examplePop: Populace = {
-    val waterdeep = City(name = "Waterdeep")
     val bob = Commoner("Bob", Inventory.fromManifest(Map(Fat -> 30, Protein -> 20)),
-      location = waterdeep, age = Adult, gender = Male)
+      age = Adult, gender = Male)
     val carl = Commoner("Carl", Inventory.fromManifest(Map(Fat -> 20, Protein -> 10)),
-      location = waterdeep, age = Adult, gender = Male)
+      age = Adult, gender = Male)
     val alice = Commoner("Alice", Inventory.fromManifest(Map(Fat -> 10, Protein -> 5)),
-      location = waterdeep, age = Adult, gender = Female)
+      age = Adult, gender = Female)
 
     Populace(alice, bob, carl)
   }
