@@ -2,7 +2,6 @@ package populace
 
 import demographic.{Adult, Female, Male}
 import inventory.Inventory
-import location.City
 import person.{Commoner, Person, PersonNames}
 import resource.{Carbs, Fat, Protein}
 
@@ -47,15 +46,15 @@ object Populace {
   def randomPop(ofSize: Int): Populace = {
     val popSize = Random.nextInt(10)
     val randomPeople = (0 to popSize) map { idx =>
-      val startingIventory = Inventory.fromManifest(
+      val startingInventory = Inventory.fromManifest(
         Map(
           Fat -> Random.nextInt(30),
           Protein -> Random.nextInt(30),
           Carbs -> Random.nextInt(30)
         ))
-      val newPerson = Commoner(PersonNames.nextName, startingIventory, age = Adult, gender = Male)
-      newPerson
+      Commoner(PersonNames.nextName, startingInventory, age = Adult, gender = Male)
     }
+
     Populace(randomPeople: _*)
   }
 

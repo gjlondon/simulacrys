@@ -1,6 +1,6 @@
 package world
 
-import location.{City, Farm, Location}
+import location.{City, Farm, Location, LocationNames}
 import populace.Populace
 
 import scala.util.Random
@@ -20,6 +20,11 @@ class World private (startingGrid: Grid) {
     grid.fullPopulace
   }
 
+  def printOverview(): Unit = {
+    grid.positions sortWith { _.name < _.name} foreach { location: Location =>
+      println(location.overview)
+    }
+  }
 }
 
 object World {
@@ -30,12 +35,16 @@ object World {
   def randomWorld: World = if (Random.nextInt(1) == 1) World.farmWorld else World.cityWorld
 }
 
-class Grid private (val positions: VectorGrid) {
+class Grid private (val positions: VectorGrid)
+  extends Iterable[Location]
+ {
   def fullPopulace: Populace = {
     positions.foldLeft(Populace.empty) { (a, loc) =>
       a ++ loc.populace
     }
   }
+
+  override def iterator: Iterator[Location] = positions.iterator
 }
 
 object Grid {

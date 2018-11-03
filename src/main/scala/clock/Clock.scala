@@ -1,9 +1,6 @@
 package clock
 
-import person.Person
-import status.Dead
 import world.World
-import populace.Populace
 
 object Clock {
 
@@ -12,38 +9,15 @@ object Clock {
 
     println(s"Tick number $tickNum")
 
-    val locations = for {
-      location <- world.grid.positions
-      updatedPeople <- location.populace map { p => p.act() }
-    } yield location.withNewPopulace(populace = Populace(updatedPeople))
+    val newLocations = world.grid.positions map { loc =>
+      val updatedPeople = loc.populace map { p => p.act() }
+      loc.withNewPopulace(populace = updatedPeople)
+    }
 
-    val newWorld = World.fromLocations(locations)
-//  world.grid map { location =>
-//      location.populace map  fullPopulace take 10 foreach { person =>
-//      println(person)
-//    }
+    val newWorld = World.fromLocations(newLocations)
+
+    newWorld.printOverview()
 
     tick(tickNum + 1, maxTicks, newWorld)
-
-
-
-//    var livingPopulace = world.fullPopulace
-//    livingPopulace = livingPopulace.filterNot(person => person.health == Dead)
-//    livingPopulace = livingPopulace.map { p =>
-//      p.act()
-//
-//      println(s"Round $tickNum:")
-//      printStatus(livingPopulace)
-//
-//    }
-  }
-
-  def printStatus(populace: Set[Person]): Unit = {
-    for {
-      person <- populace
-    } {
-      // println(s"${person.name} in ${person.location.name} is ${person.health}")
-
-    }
   }
 }

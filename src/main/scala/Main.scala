@@ -1,7 +1,5 @@
 import clock.Clock
 import person.Person
-import populace.Populace
-import status.Dead
 import world.World
 
 
@@ -11,7 +9,7 @@ object Main extends App {
 
     val world = World.randomWorld
 
-    Clock.tick(maxTicks = 10, world = world)
+    Clock.tick(maxTicks = 3, world = world)
 
   }
 
