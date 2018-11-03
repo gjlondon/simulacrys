@@ -1,27 +1,38 @@
 package resource
 
 import squants.Quantity
-import squants.energy.{Energy, Kilojoules}
+import squants.energy.{Energy, EnergyDensity, Kilojoules, SpecificEnergy}
 import squants.mass.{Kilograms, Mass}
 
 import scala.util.Random
 
-
-
-sealed trait Resource {
-  // val name: String
-
+object Calorie {
+  val calorie: Energy = Kilojoules(4.18)
+  val test = calorie / Kilograms(1)
 }
 
-sealed trait QuantifiableResource[Q] {
-  val amount: Quantity[Q]
+import Calorie.calorie
+
+//sealed trait Resource[R] extends Quantity{
+//  // val name: String
+//
+//}
+//
+//sealed trait QuantifiableResource[Q] {
+//  val amount: Quantity[Q]
+//}
+//sealed trait InventoryItem[Q] extends QuantifiableResource[Q]
+
+sealed trait Artifact {}
+
+sealed trait Commodity {
+  val amount: Quantity[Mass]
 }
-sealed trait InventoryItem[Q] extends QuantifiableResource[Q]
 
-sealed trait Commodity[Q] extends QuantifiableResource[Q]
+sealed trait Property
 
-sealed trait MacroNutrient extends QuantifiableResource[Quantity[Energy]] {
-  val caloriesPerUnit: Int
+sealed trait MacroNutrient extends Property{
+  val caloriesPerUnit: Energy
 
   def getRandomNutrient: MacroNutrient = {
     Random.nextInt(3) match {
@@ -35,21 +46,31 @@ sealed trait MacroNutrient extends QuantifiableResource[Quantity[Energy]] {
 
 
 case object Fat extends MacroNutrient {
-  override val caloriesPerUnit = 1000
-  override val amount: Energy = Kilojoules(10)
+  override val caloriesPerUnit = Kilojoules(1000)
 }
+
 case object Protein extends MacroNutrient {
-  override val caloriesPerUnit: Int = 500
-  override val amount: Energy = Kilojoules(10)
+  override val caloriesPerUnit = Kilojoules(500)
 
 }
 case object Carbs extends MacroNutrient {
-  override val caloriesPerUnit: Int = 800
-  override val amount: Energy = Kilojoules(10)
-
+  override val caloriesPerUnit = Kilojoules(800)
 }
 
-sealed trait Food extends QuantifiableResource[Mass]
+sealed trait SimpleFood extends Commodity {
+  val caloriesPerKg: SpecificEnergy
+}
+
+
+case class Beans(amount: Mass) extends SimpleFood {
+  val caloriesPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
+}
+case class Meat(amount: Mass) extends SimpleFood {
+  val caloriesPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
+}
+
+
+sealed trait Food extends Commodity
 
 // vegetable products
 case class cereals(amount: Mass) extends Food
