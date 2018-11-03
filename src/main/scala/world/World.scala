@@ -60,14 +60,14 @@ object Grid {
 
   def allFarms: Grid = {
     fillGrid {
-      val farmName = Random.nextString(5)
+      val farmName = LocationNames.nextName
       Farm(farmName, Populace.randomPop(15))
     }
   }
 
   def allCities: Grid = {
     fillGrid {
-      val cityName = Random.nextString(5)
+      val cityName = LocationNames.nextName
       City(cityName, Populace.randomPop(25))
     }
   }
