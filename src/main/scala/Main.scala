@@ -8,7 +8,7 @@ object Main extends App {
 
     val world = World.randomWorld
 
-    Clock.tick(maxTicks = 3, world = world)
+    Clock.tick(maxTicks = 30, world = world)
 
   }
 }

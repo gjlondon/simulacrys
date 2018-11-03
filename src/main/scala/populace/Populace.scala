@@ -3,7 +3,8 @@ package populace
 import demographic.{Adult, Female, Male}
 import inventory.Inventory
 import person.{Commoner, Person, PersonNames}
-import resource.{Carbs, Fat, Protein}
+import resource._
+import squants.mass.Kilograms
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{SetLike, mutable}
@@ -46,12 +47,7 @@ object Populace {
   def randomPop(ofSize: Int): Populace = {
     val popSize = Random.nextInt(10)
     val randomPeople = (0 to popSize) map { idx =>
-      val startingInventory = Inventory.fromManifest(
-        Map(
-          Fat -> Random.nextInt(30),
-          Protein -> Random.nextInt(30),
-          Carbs -> Random.nextInt(30)
-        ))
+      val startingInventory = Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1))))
       Commoner(PersonNames.nextName, startingInventory, age = Adult, gender = Male)
     }
 
@@ -59,11 +55,11 @@ object Populace {
   }
 
   def examplePop: Populace = {
-    val bob = Commoner("Bob", Inventory.fromManifest(Map(Fat -> 30, Protein -> 20)),
+    val bob = Commoner("Bob", Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1)))),
       age = Adult, gender = Male)
-    val carl = Commoner("Carl", Inventory.fromManifest(Map(Fat -> 20, Protein -> 10)),
+    val carl = Commoner("Carl", Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1)))),
       age = Adult, gender = Male)
-    val alice = Commoner("Alice", Inventory.fromManifest(Map(Fat -> 10, Protein -> 5)),
+    val alice = Commoner("Alice", Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1)))),
       age = Adult, gender = Female)
 
     Populace(alice, bob, carl)

@@ -1,20 +1,19 @@
 package inventory
 
 import meal.Meal
-import resource.{MacroNutrient, Commodity}
+import resource.{Commodity, SimpleFood}
 
 import scala.util.Random
 
 case class Inventory(contents: List[Commodity]) {
   def deductMeal(meal: Meal): Inventory = {
-    Inventory(contents.diff(meal.asIngredients))
+    Inventory(contents.diff(meal.ingredients))
   }
 
   val size: Int = contents.length
 
-  def edibleItems: Inventory = {
-    val nutrients = contents.collect { case m: MacroNutrient => m }
-    Inventory(nutrients)
+  def edibleItems: List[SimpleFood] = {
+    contents.collect { case f: SimpleFood => f }
   }
 
   def randomSample(n: Int): Inventory = {

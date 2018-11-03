@@ -1,40 +1,17 @@
 package meal
 
-import inventory.Inventory
-import resource.{Carbs, Fat, MacroNutrient, Protein}
+import resource._
+import squants.energy.{Energy, Joules}
 
-case class Meal(unitsOfProtein: Int = 0,
-                unitsOfFat: Int = 0,
-                unitsOfCarbs: Int = 0) {
-  val totalCalories: Int = {
-    Protein.caloriesPerUnit * unitsOfProtein +
-      Fat.caloriesPerUnit * unitsOfFat +
-      Carbs.caloriesPerUnit * unitsOfCarbs
-  }
-
-  def asIngredients: List[MacroNutrient] = {
-    val fat: List[MacroNutrient] = List.fill(unitsOfFat)(Fat)
-    val carbs: List[MacroNutrient] = List.fill(unitsOfCarbs)(Carbs)
-    val protein: List[MacroNutrient] = List.fill(unitsOfProtein)(Protein)
-    fat ++ carbs ++ protein
-  }
-}
+case class Meal private (calories: Energy, ingredients: List[SimpleFood])
 
 object Meal {
 
-  def fromIngredients(ingredients: Inventory): Meal = {
-    val itemCounts = ingredients.itemCounts
+  def fromIngredients(ingredients: List[SimpleFood]): Meal = {
+    val totalCalories = ingredients.foldLeft(Joules(0)) { (total, ingredient) =>
+      total + ingredient.caloriesPerKg * ingredient.amount
+    }
 
-    val unitsOfProtein = itemCounts.getOrElse(Protein, 0)
-    val unitsOfFat = itemCounts.getOrElse(Fat, 0)
-    val unitsOfCarbs = itemCounts.getOrElse(Carbs, 0)
-
-    Meal(
-      unitsOfCarbs = unitsOfCarbs,
-      unitsOfFat = unitsOfFat,
-      unitsOfProtein = unitsOfProtein
-    )
+    Meal(calories = totalCalories, ingredients = ingredients)
   }
-
-
 }

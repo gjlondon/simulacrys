@@ -3,7 +3,10 @@ package person
 import demographic._
 import inventory.Inventory
 import meal.Meal
-import resource.{Carbs, Fat, Protein}
+import resource._
+import squants.energy.Energy
+import squants.mass.Kilograms
+import Calorie.calorie
 import status._
 
 import scala.util.Random
@@ -18,8 +21,8 @@ sealed trait Person {
   def act(): Person
   def relax(): Unit
 
-  val caloriesRequired: Int = {
-    (age, gender) match {
+  val caloriesRequired: Energy = {
+    val required: Int = (age, gender) match {
       case (Child, Female) => 1500
       case (Child, Male) => 1600
       case (Young, Female) => 1700
@@ -29,6 +32,8 @@ sealed trait Person {
       case (Old, Female) => 1800
       case (Old, Male) => 1900
     }
+
+    required * calorie
   }
 }
 
@@ -53,19 +58,19 @@ case class Commoner(name: String, inventory: Inventory,
 
   def farm(): Commoner = {
     println(s"$name is farming")
-    val produce = Inventory(List(Protein, Fat, Carbs))
+    val produce = Inventory(List(Beans(Kilograms(1)), Meat(Kilograms(1))))
     val newInventory = inventory + produce
     this.copy(inventory = newInventory)
   }
 
-  def candidateMeal(fromComponents: Inventory, requiredCalories: Int, size: Int = 1): Option[Meal] = {
+  def candidateMeal(fromComponents: Inventory, requiredCalories: Energy, size: Int = 1): Option[Meal] = {
     if (size >= fromComponents.size) {
       return None
     }
 
     val ingredients = fromComponents.randomSample(size)
-    val meal = Meal.fromIngredients(ingredients)
-    if (meal.totalCalories >= requiredCalories) {
+    val meal = Meal.fromIngredients(ingredients.edibleItems)
+    if (meal.calories >= requiredCalories) {
       Some(meal)
     }
     else {

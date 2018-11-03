@@ -1,32 +1,20 @@
 package resource
 
-import squants.Quantity
-import squants.energy.{Energy, EnergyDensity, Kilojoules, SpecificEnergy}
+import squants.energy.{Energy, Kilojoules, SpecificEnergy}
 import squants.mass.{Kilograms, Mass}
 
 import scala.util.Random
 
 object Calorie {
   val calorie: Energy = Kilojoules(4.18)
-  val test = calorie / Kilograms(1)
 }
 
-import Calorie.calorie
-
-//sealed trait Resource[R] extends Quantity{
-//  // val name: String
-//
-//}
-//
-//sealed trait QuantifiableResource[Q] {
-//  val amount: Quantity[Q]
-//}
-//sealed trait InventoryItem[Q] extends QuantifiableResource[Q]
+import resource.Calorie.calorie
 
 sealed trait Artifact {}
 
 sealed trait Commodity {
-  val amount: Quantity[Mass]
+  val amount: Mass
 }
 
 sealed trait Property
