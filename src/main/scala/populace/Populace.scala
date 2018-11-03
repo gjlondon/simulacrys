@@ -47,7 +47,9 @@ object Populace {
   def randomPop(ofSize: Int): Populace = {
     val popSize = Random.nextInt(10)
     val randomPeople = (0 to popSize) map { idx =>
-      val startingInventory = Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1))))
+      val startingBeans = Beans(Kilograms(Random.nextDouble() * 3))
+      val startingMeat = Meat(Kilograms(Random.nextDouble() * 1))
+      val startingInventory = Inventory(List(startingBeans, startingMeat))
       Commoner(PersonNames.nextName, startingInventory, age = Adult, gender = Male)
     }
 
