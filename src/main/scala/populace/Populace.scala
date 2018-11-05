@@ -4,7 +4,9 @@ import demographic.{Adult, Female, Male}
 import inventory.Inventory
 import person.{Commoner, Person, PersonNames}
 import resource._
-import squants.mass.Kilograms
+import squants.mass.{Kilograms, Mass}
+import squants.motion.Distance
+import squants.space.{Centimeters, Meters}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{SetLike, mutable}
@@ -50,7 +52,19 @@ object Populace {
       val startingBeans = Beans(Kilograms(Random.nextDouble() * 3))
       val startingMeat = Meat(Kilograms(Random.nextDouble() * 1))
       val startingInventory = Inventory(List(startingBeans, startingMeat))
-      Commoner(PersonNames.nextName, startingInventory, age = Adult, gender = Male)
+      val startingHeight: Distance = Centimeters(Random.nextGaussian() * 75) + Centimeters(165) // guessing average heights
+    val startingLeanMass: Mass = Kilograms(Random.nextGaussian() * 15) + Kilograms(50) // guessing average weights
+    val startingFat: Mass = Kilograms(Random.nextGaussian() * 3) + Kilograms(10) // guessing average weights
+
+      Commoner(
+        name = PersonNames.nextName,
+        inventory = startingInventory,
+        age = Adult,
+        gender = Male,
+        availableBodyFat = startingFat,
+        leanBodyMass = startingLeanMass,
+        height = startingHeight
+      )
     }
 
     Populace(randomPeople: _*)
@@ -58,11 +72,17 @@ object Populace {
 
   def examplePop: Populace = {
     val bob = Commoner("Bob", Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1)))),
-      age = Adult, gender = Male)
+      age = Adult, gender = Male, availableBodyFat = Kilograms(30),
+      leanBodyMass = Kilograms(10),
+      height = Meters(1))
     val carl = Commoner("Carl", Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1)))),
-      age = Adult, gender = Male)
+      age = Adult, gender = Male, availableBodyFat = Kilograms(30),
+      leanBodyMass = Kilograms(10),
+      height = Meters(1))
     val alice = Commoner("Alice", Inventory(List(Beans(Kilograms(5)), Meat(Kilograms(1)))),
-      age = Adult, gender = Female)
+      age = Adult, gender = Female, availableBodyFat = Kilograms(30),
+      leanBodyMass = Kilograms(10),
+      height = Meters(1))
 
     Populace(alice, bob, carl)
   }

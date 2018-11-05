@@ -1,16 +1,18 @@
 package location
 
 import populace.Populace
+import status.Dead
 
 import scala.util.Random
 
 sealed trait Location {
   def overview: String = {
-    s"Location $name has a populace of size ${this.populace.size}"
+    s"Location $name has a living populace of size ${this.livingPopSize}"
   }
 
   val name: String
   val populace: Populace
+  def livingPopSize: Int = populace.filterNot( _.health == Dead ).size
   def withNewPopulace(populace: Populace): Location  // TODO maybe replace with a lens?
 }
 

@@ -5,11 +5,38 @@ import inventory.Inventory
 import meal.Meal
 import resource._
 import squants.energy.Energy
-import squants.mass.Kilograms
+import squants.mass._
 import Calorie.calorie
+import squants.motion.Distance
 import status._
+import constants.Constants.CALORIES_PER_KILO_OF_FAT
 
 import scala.util.Random
+
+sealed trait WeightStatus
+
+case object Underweight extends WeightStatus
+case object Normal extends WeightStatus
+case object Overweight extends WeightStatus
+case object Obese extends WeightStatus
+case object DangerouslyLow extends WeightStatus
+
+package object healthCalculations {
+    def calcWeightStatus (fromBodyMassIndex: AreaDensity): WeightStatus = {
+      fromBodyMassIndex match {
+        case bmi if bmi < KilogramsPerSquareMeter(13) => DangerouslyLow // https://www.livestrong.com/article/434699-what-is-a-dangerously-low-bmi/
+        case bmi if bmi < KilogramsPerSquareMeter(18.5) => Underweight
+        case bmi if bmi < KilogramsPerSquareMeter(24.9) => Normal
+        case bmi if bmi < KilogramsPerSquareMeter(29.9) => Overweight
+        case _ => Obese
+      }
+    }
+
+  def calcBodyMassIndex(height: Distance, weight: Mass): AreaDensity = weight / (height * height)
+}
+
+import healthCalculations.{calcBodyMassIndex, calcWeightStatus}
+
 
 sealed trait Person {
   val name: String
@@ -17,9 +44,19 @@ sealed trait Person {
   val health: HealthStatus
   val age: AgeBracket
   val gender: Gender
+  val height: Distance
+  val leanBodyMass: Mass
+  val availableBodyFat: Mass
+
+  def weight: Mass = leanBodyMass + availableBodyFat
+  def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
+  def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
   def eat(): Person
   def act(): Person
+  def metabolize(): Person
   def relax(): Unit
+
+
 
   val caloriesRequired: Energy = {
     val required: Int = (age, gender) match {
@@ -39,8 +76,24 @@ sealed trait Person {
 
 
 case class Commoner(name: String, inventory: Inventory,
-                    age: AgeBracket, gender: Gender,
+                    age: AgeBracket, gender: Gender, height: Distance,
+                    availableBodyFat: Mass, leanBodyMass: Mass,
                     health: HealthStatus = Fine) extends Person {
+
+  override def metabolize(): Commoner = {
+    val requiredCalories = caloriesRequired
+    val fatBurned = requiredCalories / CALORIES_PER_KILO_OF_FAT
+    val newBodyFat = availableBodyFat - fatBurned
+
+
+    val newHealthStatus = if (availableBodyFat <= Kilograms(0)) Dead else health
+    println(s"$newHealthStatus")
+    this.copy(
+      availableBodyFat = newBodyFat,
+      health = newHealthStatus
+    )
+  }
+
   override def eat(): Commoner = {
     val meal = candidateMeal(
       fromComponents = inventory,
@@ -48,17 +101,19 @@ case class Commoner(name: String, inventory: Inventory,
     )
 
     meal match {
-      case None => this.copy(health = health.nextWorst)
-      case Some(eatenMeal) => this.copy(
-        inventory = inventory.deductMeal(eatenMeal),
-        health = health.nextBest
-      )
+      case None => this
+      case Some(eatenMeal) =>
+        val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
+        this.copy(
+          inventory = inventory.deductMeal(eatenMeal),
+          availableBodyFat = availableBodyFat + fatGained
+        )
     }
   }
 
   def farm(): Commoner = {
-    println(s"$name is farming")
-    val produce = Inventory(List(Beans(Kilograms(1)), Meat(Kilograms(1))))
+//    println(s"$name is farming")
+    val produce = Inventory(List(Beans(Grams(.1)), Meat(Grams(.1))))
     val newInventory = inventory + produce
     this.copy(inventory = newInventory)
   }
@@ -88,17 +143,20 @@ case class Commoner(name: String, inventory: Inventory,
   }
 
   override def relax(): Unit = {
-    println(s"$name is having a good time")
+//    println(s"$name is having a good time")
   }
 
   override def act(): Commoner = {
-    val afterEating = eat()
+    val afterMetabolism = metabolize()
+    val afterEating = afterMetabolism.eat()
 
-    afterEating.health match {
-      case Robust | Fine => afterEating.party()
-      case Sick | Poor => afterEating.farm()
+    afterEating.weightStatus match {
+      case Obese | Overweight => afterEating.party()
+      case Normal | Underweight | DangerouslyLow => afterEating.farm()
     }
   }
+
+
 }
 
 object PersonNames {
@@ -273,3 +331,4 @@ object PersonNames {
     "Zaniel",
     "Zarek")
 }
+
