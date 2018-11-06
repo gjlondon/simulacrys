@@ -2,14 +2,9 @@ package clock
 
 import world.World
 
-import scala.annotation.tailrec
-
 object Clock {
 
-  @tailrec
-  def tick(tickNum: Int = 0, maxTicks: Int, world: World): World = {
-    if (tickNum >= maxTicks) return world
-
+  def tick(tickNum: Int = 0, world: World): World = {
     println(s"Tick number $tickNum")
 
     val newLocations = world.grid.positions map { loc =>
@@ -17,8 +12,6 @@ object Clock {
       loc.withNewPopulace(populace = updatedPopulace)
     }
 
-    val newWorld = World.fromLocations(newLocations)
-
-    tick(tickNum + 1, maxTicks, newWorld)
+    World.fromLocations(newLocations)
   }
 }
