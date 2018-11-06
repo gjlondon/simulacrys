@@ -6,6 +6,10 @@ scalaVersion := "2.12.7"
 
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
 
+val buildSettings = Defaults.coreDefaultSettings ++ Seq(
+  javaOptions += "-Xmx20G",
+)
+
 libraryDependencies += {
   val version = scalaBinaryVersion.value match {
     case "2.10" => "1.0.3"

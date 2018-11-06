@@ -87,7 +87,7 @@ case class Commoner(name: String, inventory: Inventory,
 
 
     val newHealthStatus = if (availableBodyFat <= Kilograms(0)) Dead else health
-    println(s"$newHealthStatus")
+    // println(s"$newHealthStatus")
     this.copy(
       availableBodyFat = newBodyFat,
       health = newHealthStatus
