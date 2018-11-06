@@ -12,12 +12,12 @@ object Clock {
 
     println(s"Tick number $tickNum")
 
-    val newLocations = world.grid.positions map { loc =>
+    val newLocations = world.grid.positions.par.map { loc =>
       val updatedPopulace = loc.populace map { p => p.act() }
       loc.withNewPopulace(populace = updatedPopulace)
     }
 
-    val newWorld = World.fromLocations(newLocations)
+    val newWorld = World.fromLocations(newLocations.toVector)
 
     tick(tickNum + 1, maxTicks, newWorld)
   }
