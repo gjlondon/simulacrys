@@ -1,7 +1,7 @@
 package person
 
 import demographic._
-import inventory.Inventory
+import inventory.CommodityInventory
 import meal.Meal
 import resource._
 import squants.energy.Energy
@@ -40,7 +40,7 @@ import healthCalculations.{calcBodyMassIndex, calcWeightStatus}
 
 sealed trait Person {
   val name: String
-  val inventory: Inventory
+  val inventory: CommodityInventory
   val health: HealthStatus
   val age: AgeBracket
   val gender: Gender
@@ -75,7 +75,7 @@ sealed trait Person {
 }
 
 
-case class Commoner(name: String, inventory: Inventory,
+case class Commoner(name: String, inventory: CommodityInventory,
                     age: AgeBracket, gender: Gender, height: Distance,
                     availableBodyFat: Mass, leanBodyMass: Mass,
                     health: HealthStatus = Fine) extends Person {
@@ -113,17 +113,18 @@ case class Commoner(name: String, inventory: Inventory,
 
   def farm(): Commoner = {
 //    println(s"$name is farming")
-    val produce = Inventory(List(Beans(Grams(.1)), Meat(Grams(.1))))
+    val produce = CommodityInventory(Map(Beans -> Grams(.1), Meat -> Grams(.1)))
     val newInventory = inventory + produce
+    println(newInventory.size)
     this.copy(inventory = newInventory)
   }
 
-  def candidateMeal(fromComponents: Inventory, requiredCalories: Energy, size: Int = 1): Option[Meal] = {
+  def candidateMeal(fromComponents: CommodityInventory, requiredCalories: Energy, size: Int = 1): Option[Meal] = {
     if (size >= fromComponents.size) {
       return None
     }
 
-    val ingredients = fromComponents.randomSample(size)
+    val ingredients = fromComponents.weightedRandomElement()
     val meal = Meal.fromIngredients(ingredients.edibleItems)
     if (meal.calories >= requiredCalories) {
       Some(meal)
