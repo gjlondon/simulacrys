@@ -59,15 +59,15 @@ sealed trait Person {
 
 
   val caloriesRequired: Energy = {
-    val required: Int = (age, gender) match {
+    val required: Int = (age: AgeBracket, gender) match {
       case (Child, Female) => 1500
       case (Child, Male) => 1600
       case (Young, Female) => 1700
       case (Young, Male) => 1800
       case (Adult, Female) => 1900
       case (Adult, Male) => 2000
-      case (Old, Female) => 1800
-      case (Old, Male) => 1900
+      case (demographic.Old, Female) => 1800
+      case (demographic.Old, Male) => 1900
     }
 
     required * calorie

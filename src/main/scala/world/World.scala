@@ -5,13 +5,9 @@ import populace.Populace
 
 import scala.util.Random
 
-object LocationTypes {
-  // intended to represent a 2D grid, but I realized that indexing
-  // tricks can make it appear 2D, while actually storing in 1D makes mapping etc easier
-  type VectorGrid = Vector[Location]
-}
 
-import LocationTypes.VectorGrid
+
+import convenienceTypes.ConvenienceTypes.VectorGrid
 
 class World private (startingGrid: Grid) {
   val grid: Grid = startingGrid
