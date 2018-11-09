@@ -81,16 +81,11 @@ case class Commoner(name: String, inventory: Inventory,
                     health: HealthStatus = Fine) extends Person {
 
   override def metabolize(): Commoner = {
-    val requiredCalories = caloriesRequired
-    val fatBurned = requiredCalories / CALORIES_PER_KILO_OF_FAT
-    val newBodyFat = availableBodyFat - fatBurned
+    val fatBurned = caloriesRequired / CALORIES_PER_KILO_OF_FAT
 
-
-    val newHealthStatus = if (availableBodyFat <= Kilograms(0)) Dead else health
-    // println(s"$newHealthStatus")
     this.copy(
-      availableBodyFat = newBodyFat,
-      health = newHealthStatus
+      availableBodyFat = availableBodyFat - fatBurned,
+      health = if (availableBodyFat <= Kilograms(0)) Dead else health
     )
   }
 

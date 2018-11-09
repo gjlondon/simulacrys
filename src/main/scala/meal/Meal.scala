@@ -9,7 +9,7 @@ object Meal {
 
   def fromIngredients(ingredients: List[SimpleFood]): Meal = {
     val totalCalories = ingredients.foldLeft(Joules(0)) { (total, ingredient) =>
-      total + ingredient.caloriesPerKg * ingredient.amount
+      total + ingredient.caloriesPerKg * ingredient.unitWeight
     }
 
     Meal(calories = totalCalories, ingredients = ingredients)

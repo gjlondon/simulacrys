@@ -11,12 +11,6 @@ object Calorie {
 
 import resource.Calorie.calorie
 
-sealed trait Freshness
-
-case object Spoiled extends Freshness
-case object Old extends Freshness
-case object Fresh extends Freshness
-
 sealed trait Artifact {}
 
 sealed trait SKU {
@@ -26,13 +20,6 @@ sealed trait SKU {
 sealed trait Commodity extends SKU
 
 sealed trait Property
-
-sealed trait Durability
-
-case object Robust
-case object Fair
-case object Worn
-case object Broken
 
 sealed trait Endeavor
 
@@ -53,14 +40,14 @@ sealed trait SimpleFood extends Commodity {
   val freshness: Freshness
 }
 
-case class Beans(freshness: Freshness) extends SimpleFood {
+case class Beans(freshness: Freshness = Fresh) extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Kilograms(.25)
 }
 
 object Beans
 
-case class Meat(freshness: Freshness) extends SimpleFood {
+case class Meat(freshness: Freshness = Fresh) extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Grams(100)
 }
