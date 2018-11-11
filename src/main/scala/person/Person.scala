@@ -108,7 +108,24 @@ case class Commoner(name: String, inventory: Inventory,
 
   def farm(): Commoner = {
 //    println(s"$name is farming")
-    val produce = Inventory(List(Beans(Grams(.1)), Meat(Grams(.1))))
+    val yields: Map[SimpleFood, Int] = Map(
+      Beans -> Random.nextInt(10),
+      Meat -> Random.nextInt(5)
+    )
+
+    val crops = Seq(Beans, Meat)
+
+    val produce = crops map { cropType =>
+      yields.get(cropType) match {
+        case Some(cropYield) => List.fill(cropYield) { cropType() }
+        case None => None
+      }
+    }
+//    val beanYield = Random.nextInt(10)
+//    val meatYield = Random.nextInt(5)
+//    val beanCrop = List.fill(beanYield) { Beans() }
+//    val meatCrop = List.fill(meatYield) { Meat() }
+//    val produce = Inventory(beanCrop ++ meatCrop)
     val newInventory = inventory + produce
     this.copy(inventory = newInventory)
   }
