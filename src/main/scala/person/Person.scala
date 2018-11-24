@@ -106,27 +106,26 @@ case class Commoner(name: String, inventory: Inventory,
     }
   }
 
+
+
   def farm(): Commoner = {
-//    println(s"$name is farming")
-    val yields: Map[SimpleFood, Int] = Map(
-      Beans -> Random.nextInt(10),
-      Meat -> Random.nextInt(5)
-    )
+    /**
+    People can take advantage of local available arable land to produce a certain quantity of
+    crops and/or live stock.
 
-    val crops = Seq(Beans, Meat)
+      We'd like to be able to select a subset of possible crops ot farm, and then randomly generate a crop yield
+      amount based on a distribution that is specific to each type of crop. Ideally we could create a "yield map"
+      which would map from Type to Yield amount.
 
-    val produce = crops map { cropType =>
-      yields.get(cropType) match {
-        case Some(cropYield) => List.fill(cropYield) { cropType() }
-        case None => None
-      }
-    }
-//    val beanYield = Random.nextInt(10)
-//    val meatYield = Random.nextInt(5)
-//    val beanCrop = List.fill(beanYield) { Beans() }
-//    val meatCrop = List.fill(meatYield) { Meat() }
-//    val produce = Inventory(beanCrop ++ meatCrop)
-    val newInventory = inventory + produce
+      Ideally farms would have some degree of persistence so that we could model the fact that growing crops inevitably takes
+      time, but maybe that's a future feature.
+
+      */
+
+      val cropToFarm: SimpleFood = SimpleFood.randomCrop()
+
+    val cropYield = cropToFarm.randomYield
+    val newInventory = inventory + cropYield
     this.copy(inventory = newInventory)
   }
 

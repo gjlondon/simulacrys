@@ -25,6 +25,18 @@ sealed trait Endeavor
 
 case object Farming extends Endeavor
 
+sealed trait InventoryItem {
+  val sku: SKU
+  val units: Int
+}
+
+case class FoodItem(sku: SimpleFood,
+                    freshness: Freshness = Fresh,
+                    units: Int = 1) extends InventoryItem {
+  def someBeans: FoodItem = FoodItem(sku=Beans)
+  def someMeat: FoodItem = FoodItem(sku=Beans)
+}
+
 sealed trait Tool extends SKU {
   val usedFor: Endeavor
   val durability: Durability
@@ -37,19 +49,39 @@ case class FarmingTools(durability: Durability) extends Tool {
 
 sealed trait SimpleFood extends Commodity {
   val caloriesPerKg: SpecificEnergy
-  val freshness: Freshness
+  val yieldMean: Int  // units in average harvest
+  val yieldStd: Int // variance of harvest
+
+  def randomYield: FoodItem = {
+    val surplus = Math.floor(yieldStd * Random.nextGaussian())
+    val cropYield = Math.floor(Math.max(yieldMean + surplus, 0)).toInt
+    FoodItem(sku = this, freshness = Fresh, units=cropYield)
+  }
 }
 
-case class Beans(freshness: Freshness = Fresh) extends SimpleFood {
+object SimpleFood {
+  def randomCrop(): SimpleFood = {
+    val roll = Random.nextInt(100)
+    roll match {
+      case x if x < 30 => Meat
+      case _ => Beans
+    }
+  }
+}
+
+
+case object Beans extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Kilograms(.25)
+  override val yieldMean: Int = 2
+  override val yieldStd: Int = 1
 }
 
-object Beans
-
-case class Meat(freshness: Freshness = Fresh) extends SimpleFood {
+case object Meat extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Grams(100)
+  override val yieldMean: Int = 1
+  override val yieldStd: Int = 1
 }
 
 sealed trait MacroNutrient extends Property{
