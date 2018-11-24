@@ -173,7 +173,7 @@ case class Commoner(name: String, inventory: Inventory,
 object PersonNames {
   def nextName: String = names(Random.nextInt(names.length))
 
-  val names = Vector(
+  val names: Vector[String] = Vector(
     "Abrielle",
     "Adair",
     "Adara",
