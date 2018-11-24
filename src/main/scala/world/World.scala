@@ -21,6 +21,14 @@ class World private (startingGrid: Grid) {
       println(location.overview)
     }
   }
+
+  def printSummary(): Unit = {
+    val allPops = grid.positions map { loc: Location =>
+      loc.livingPopSize
+    }
+    val totalPop = allPops.sum
+    println(s"Total world population $totalPop")
+  }
 }
 
 object World {
