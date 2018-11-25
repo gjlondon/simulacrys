@@ -25,16 +25,47 @@ sealed trait Endeavor
 
 case object Farming extends Endeavor
 
-sealed trait InventoryItem {
+sealed trait ItemGroup[T <: Quality]{
+  val contents: Map[T, Int]
   val sku: SKU
-  val units: Int
+
+  protected def mergeContents(rightGroup: ItemGroup[T], op: (Int, Int) => Int): Map[T, Int] = {
+    val leftContents = this.contents
+    val rightContents = rightGroup.contents
+    val allKeys = leftContents.keySet ++ rightContents.keySet
+    allKeys.foldLeft(Map[T, Int]()) { (existing: Map[T, Int], nextKey) =>
+      val leftVal = leftContents.getOrElse(nextKey, 0)
+      val rightVal = rightContents.getOrElse(nextKey, 0)
+      existing.updated(nextKey, op(leftVal, rightVal))
+    }
+  }
 }
 
-case class FoodItem(sku: SimpleFood,
-                    freshness: Freshness = Fresh,
-                    units: Int = 1) extends InventoryItem {
-  def someBeans: FoodItem = FoodItem(sku=Beans)
-  def someMeat: FoodItem = FoodItem(sku=Beans)
+case class FoodItemGroup(contents: Map[Freshness, Int], sku: SimpleFood) extends ItemGroup[Freshness] {
+
+  def +(rhs: FoodItemGroup): FoodItemGroup = {
+    val mergedContents = mergeContents(rhs, op = { _ + _ })
+    FoodItemGroup(contents=mergedContents, sku=sku)
+  }
+
+  def -(rhs: FoodItemGroup): FoodItemGroup = {
+    val mergedContents = mergeContents(rhs, op = { _ - _ })
+    FoodItemGroup(contents=mergedContents, sku=sku)
+  }
+}
+
+case class ToolItemGroup(contents: Map[Durability, Int], sku: Tool) extends ItemGroup[Durability] {
+
+  def +(rhs: ToolItemGroup): ToolItemGroup = {
+    val mergedContents = mergeContents(rhs, op = { _ + _ })
+    ToolItemGroup(contents=mergedContents, sku=sku)
+  }
+
+
+  def -(rhs: ToolItemGroup): ToolItemGroup = {
+    val mergedContents = mergeContents(rhs, op = { _ - _ })
+    ToolItemGroup(contents=mergedContents, sku=sku)
+  }
 }
 
 sealed trait Tool extends SKU {
@@ -52,10 +83,10 @@ sealed trait SimpleFood extends Commodity {
   val yieldMean: Int  // units in average harvest
   val yieldStd: Int // variance of harvest
 
-  def randomYield: FoodItem = {
+  def randomYield: FoodItemGroup = {
     val surplus = Math.floor(yieldStd * Random.nextGaussian())
     val cropYield = Math.floor(Math.max(yieldMean + surplus, 0)).toInt
-    FoodItem(sku = this, freshness = Fresh, units=cropYield)
+    FoodItemGroup(sku = this, freshness = Fresh, units=cropYield)
   }
 }
 

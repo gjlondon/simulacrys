@@ -129,11 +129,11 @@ case class Commoner(name: String, inventory: FoodInventory,
     this.copy(inventory = newInventory)
   }
 
-  def cheapestMeal(candidateComponents: List[FoodItem],
-                   selectedComponents: List[FoodItem] = List(),
+  def cheapestMeal(candidateComponents: List[FoodItemGroup],
+                   selectedComponents: List[FoodItemGroup] = List(),
                    requiredCalories: Energy): Option[Meal] = {
     if (candidateComponents.isEmpty) { return None }
-    val cheapestIngredient: FoodItem = candidateComponents.sortWith( _.units > _.units ).head
+    val cheapestIngredient: FoodItemGroup = candidateComponents.sortWith( _.units > _.units ).head
     val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents)
     val calorieDeficit = requiredCalories - caloriesSoFar
     val requiredUnitsToCoverDeficit = Math.ceil(calorieDeficit / {

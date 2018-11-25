@@ -49,8 +49,8 @@ object Populace {
   def randomPop(ofSize: Int): Populace = {
     val popSize = Random.nextInt(10)
     val randomPeople = (0 to popSize) map { idx =>
-      val startingBeans = FoodItem(sku=Beans, units=Random.nextInt(20) + 1)
-      val startingMeat = FoodItem(sku=Meat, units=Random.nextInt(20) + 1)
+      val startingBeans = FoodItemGroup(sku=Beans, units=Random.nextInt(20) + 1)
+      val startingMeat = FoodItemGroup(sku=Meat, units=Random.nextInt(20) + 1)
       val startingInventory = FoodInventory(List(startingBeans, startingMeat))
       val startingHeight: Distance = Centimeters(Random.nextGaussian() * 75) + Centimeters(165) // guessing average heights
     val startingLeanMass: Mass = Kilograms(Random.nextGaussian() * 15) + Kilograms(50) // guessing average weights
@@ -71,15 +71,15 @@ object Populace {
   }
 
   def examplePop: Populace = {
-    val bob = Commoner("Bob", FoodInventory(List(FoodItem(sku=Beans), FoodItem(sku=Meat))),
+    val bob = Commoner("Bob", FoodInventory(List(FoodItemGroup(sku=Beans), FoodItemGroup(sku=Meat))),
       age = Adult, gender = Male, availableBodyFat = Kilograms(30),
       leanBodyMass = Kilograms(10),
       height = Meters(1))
-    val carl = Commoner("Carl", FoodInventory(List(FoodItem(sku=Beans), FoodItem(sku=Meat, units=2))),
+    val carl = Commoner("Carl", FoodInventory(List(FoodItemGroup(sku=Beans), FoodItemGroup(sku=Meat, units=2))),
       age = Adult, gender = Male, availableBodyFat = Kilograms(30),
       leanBodyMass = Kilograms(10),
       height = Meters(1))
-    val alice = Commoner("Alice", FoodInventory(List(FoodItem(sku=Beans, units=2), FoodItem(sku=Meat))),
+    val alice = Commoner("Alice", FoodInventory(List(FoodItemGroup(sku=Beans, units=2), FoodItemGroup(sku=Meat))),
       age = Adult, gender = Female, availableBodyFat = Kilograms(30),
       leanBodyMass = Kilograms(10),
       height = Meters(1))
