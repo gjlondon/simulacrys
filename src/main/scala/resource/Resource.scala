@@ -42,7 +42,7 @@ sealed trait ItemGroup[T <: Quality]{
   }
 }
 
-case class FoodItemGroup(contents: Map[Freshness, Int], sku: SimpleFood) extends ItemGroup[Freshness] {
+case class FoodItemGroup private (contents: Map[Freshness, Int], sku: SimpleFood) extends ItemGroup[Freshness] {
 
   def +(rhs: FoodItemGroup): FoodItemGroup = {
     val mergedContents = mergeContents(rhs, op = { _ + _ })
@@ -81,6 +81,13 @@ object FoodItemGroup {
       Old -> Random.nextInt(max / 2),
     )
     FoodItemGroup(contents = contents, sku=food)
+  }
+
+  def apply(contents: Map[Freshness, Int], sku: SimpleFood): FoodItemGroup = {
+    val filteredContents: Map[Freshness, Int] = contents collect {
+      case (quality, quantity) if quantity > 0 => quality -> quantity
+    }
+    new FoodItemGroup(filteredContents, sku=sku)
   }
 }
 

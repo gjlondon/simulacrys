@@ -3,14 +3,12 @@ package inventory
 import meal.Meal
 import resource._
 
-import scala.util.Random
-
-case class FoodInventory(contents: Map[SimpleFood, FoodItemGroup]) {
+case class FoodInventory private (contents: Map[SimpleFood, FoodItemGroup]) {
 
   def deductMeal(meal: Meal): FoodInventory = {
-//    println(s"before $contents")
+    println(s"before $contents")
 
-//    println(s"ingredients ${meal.ingredients}")
+    println(s"ingredients ${meal.ingredients}")
     val ingredients: Map[SimpleFood, FoodItemGroup] = meal.ingredients
 
     val deductedInventory = contents map {
@@ -20,7 +18,7 @@ case class FoodInventory(contents: Map[SimpleFood, FoodItemGroup]) {
           case Some(consumed: FoodItemGroup) => food -> (group - consumed)
         }
     }
-//    println(s"after $deductedInventory")
+    println(s"after $deductedInventory")
     FoodInventory(deductedInventory)
   }
 
@@ -30,22 +28,20 @@ case class FoodInventory(contents: Map[SimpleFood, FoodItemGroup]) {
   def cheapestComponent: FoodItemGroup = {
     contents.values.toList.sortWith { case (a: FoodItemGroup, b: FoodItemGroup) => a.size  > b.size }.head
   }
-//
-//  def randomSample(n: Int): FoodInventory = {
-//    FoodInventory(Random.shuffle(contents).take(n))
-//  }
-
 
   def +(newInventory: FoodInventory): FoodInventory = {
     FoodInventory(contents ++ newInventory.contents)
   }
-
-//  def +(newItem: FoodItemGroup): FoodInventory = {
-//    FoodInventory(contents ++ List(newItem))
-//  }
 }
 
 object FoodInventory {
+
+  def apply(contents: Map[SimpleFood, FoodItemGroup]): FoodInventory = {
+    val filteredContents: Map[SimpleFood, FoodItemGroup] = contents collect {
+      case (sku, group) if group.size > 0 => sku -> group
+    }
+    new FoodInventory(filteredContents)
+  }
 //
 //  def apply(contents: Map[SimpleFood, FoodItemGroup]): FoodInventory = {
 //
