@@ -28,7 +28,7 @@ case object Farming extends Endeavor
 sealed trait ItemGroup[T <: Quality]{
   val contents: Map[T, Int]
   val sku: SKU
-  val size: Int = contents.size
+  val size: Int = contents.values.sum
 
   protected def mergeContents(rightGroup: ItemGroup[T], op: (Int, Int) => Int): Map[T, Int] = {
     val leftContents = this.contents

@@ -8,9 +8,9 @@ import scala.util.Random
 case class FoodInventory(contents: Map[SimpleFood, FoodItemGroup]) {
 
   def deductMeal(meal: Meal): FoodInventory = {
-    println(s"before $contents")
+//    println(s"before $contents")
 
-    println(s"ingredients ${meal.ingredients}")
+//    println(s"ingredients ${meal.ingredients}")
     val ingredients: Map[SimpleFood, FoodItemGroup] = meal.ingredients
 
     val deductedInventory = contents map {
@@ -20,7 +20,7 @@ case class FoodInventory(contents: Map[SimpleFood, FoodItemGroup]) {
           case Some(consumed: FoodItemGroup) => food -> (group - consumed)
         }
     }
-    println(s"after $deductedInventory")
+//    println(s"after $deductedInventory")
     FoodInventory(deductedInventory)
   }
 

@@ -141,22 +141,26 @@ case class Commoner(name: String, inventory: FoodInventory,
   def cheapestMeal(candidateComponents: FoodInventory,
                    selectedComponents: FoodInventory = FoodInventory(Map[SimpleFood, FoodItemGroup]()),
                    requiredCalories: Energy): Option[Meal] = {
+    // We're out of ingredients
     if (candidateComponents.isEmpty) { return None }
-    val cheapestIngredient: FoodItemGroup = candidateComponents.cheapestComponent
+
     val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents.contents)
     val calorieDeficit = requiredCalories - caloriesSoFar
-    val foodType: SimpleFood = cheapestIngredient.sku
 
-    val requiredUnitsToCoverDeficit = Math.ceil(calorieDeficit / {
-      foodType.caloriesPerKg * foodType.unitWeight
-    }).toInt
+    // we need to add more ingredients to get enough calories
+    val cheapestFood: FoodItemGroup = candidateComponents.cheapestComponent
+    val foodType: SimpleFood = cheapestFood.sku
+    val requiredUnitsToCoverDeficit = Math.ceil(
+      calorieDeficit / (foodType.caloriesPerKg * foodType.unitWeight)
+    ).toInt
 
-    if (cheapestIngredient.size >= requiredUnitsToCoverDeficit) {
-      val consumedUnits = cheapestIngredient.collectCheapestUnits(requiredUnitsToCoverDeficit)
-      return Some(Meal.fromIngredients(selectedComponents.contents.updated(foodType, consumedUnits)))
+    if (cheapestFood.size >= requiredUnitsToCoverDeficit) {
+      val cheapestIngredients = cheapestFood.collectCheapestUnits(requiredUnitsToCoverDeficit)
+      val finalIngredientsForMeal = selectedComponents.contents.updated(foodType, cheapestIngredients)
+      return Some(Meal.fromIngredients(finalIngredientsForMeal))
     }
 
-    val consumedContents = selectedComponents.contents.updated(foodType, cheapestIngredient)
+    val consumedContents = selectedComponents.contents.updated(foodType, cheapestFood)
     val remainingContents = candidateComponents.contents - foodType
     cheapestMeal(
       candidateComponents = FoodInventory(contents = remainingContents),
