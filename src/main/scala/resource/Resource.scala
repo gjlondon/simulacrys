@@ -3,6 +3,7 @@ package resource
 import squants.energy.{Energy, Kilojoules, SpecificEnergy}
 import squants.mass.{Grams, Kilograms, Mass}
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 object Calorie {
@@ -55,22 +56,27 @@ case class FoodItemGroup private (contents: Map[Freshness, Int], sku: SimpleFood
   }
 
   def collectCheapestUnits(unitsToConsume: Int): FoodItemGroup = {
-    // TODO make tailrec
-    val valueSortedContents = this.contents.toList.sortWith { _._2 > _._2 }
-    val cheapestItem = valueSortedContents.head
-    val cheapestQuantity = cheapestItem._2
-    val freshnessOfCheapest = cheapestItem._1
 
-    if (cheapestQuantity >= unitsToConsume) {
-      val contentsToDeduct = Map[Freshness, Int](freshnessOfCheapest -> unitsToConsume)
-      FoodItemGroup(contents = contentsToDeduct, sku=sku)
+    val valueSortedContents = this.contents.toList.sortWith { _._2 > _._2 }
+
+    @tailrec
+    def go(unitsToConsume: Int,
+           itemsToConsider: FoodItemGroup,
+           cheapestUnits: FoodItemGroup): FoodItemGroup = {
+      val (freshnessOfCheapest, cheapestQuantity) = valueSortedContents.head
+
+      if (cheapestQuantity >= unitsToConsume) {
+        val contentsToDeduct = Map[Freshness, Int](freshnessOfCheapest -> unitsToConsume)
+        cheapestUnits + FoodItemGroup(contents = contentsToDeduct, sku=sku)
+      }
+      else {
+        val contentsToDeduct = Map[Freshness, Int](freshnessOfCheapest -> cheapestQuantity)
+        val newCheapestUnits = cheapestUnits + FoodItemGroup(contents = contentsToDeduct, sku = sku)
+        val remainingItems = itemsToConsider - newCheapestUnits
+        go(unitsToConsume - cheapestQuantity, remainingItems, newCheapestUnits)
+      }
     }
-    else {
-      val contentsToDeduct = Map[Freshness, Int](freshnessOfCheapest -> cheapestQuantity)
-      val groupToDeduct = FoodItemGroup(contents = contentsToDeduct, sku = sku)
-      val remainingItems = this - groupToDeduct
-      groupToDeduct + remainingItems.collectCheapestUnits(unitsToConsume - cheapestQuantity)
-    }
+    go(unitsToConsume, this, FoodItemGroup(Map[Freshness, Int](), sku))
   }
 }
 
