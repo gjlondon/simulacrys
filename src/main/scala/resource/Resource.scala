@@ -73,15 +73,15 @@ object SimpleFood {
 case object Beans extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Kilograms(.25)
-  override val yieldMean: Int = 2
-  override val yieldStd: Int = 1
+  override val yieldMean: Int = 5
+  override val yieldStd: Int = 3
 }
 
 case object Meat extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Grams(100)
-  override val yieldMean: Int = 1
-  override val yieldStd: Int = 1
+  override val yieldMean: Int = 4
+  override val yieldStd: Int = 2
 }
 
 sealed trait MacroNutrient extends Property{
@@ -99,15 +99,15 @@ sealed trait MacroNutrient extends Property{
 
 
 case object Fat extends MacroNutrient {
-  override val caloriesPerUnit = Kilojoules(1000)
+  override val caloriesPerUnit: Energy = Kilojoules(1000)
 }
 
 case object Protein extends MacroNutrient {
-  override val caloriesPerUnit = Kilojoules(500)
+  override val caloriesPerUnit: Energy = Kilojoules(500)
 
 }
 case object Carbs extends MacroNutrient {
-  override val caloriesPerUnit = Kilojoules(800)
+  override val caloriesPerUnit: Energy = Kilojoules(800)
 }
 
 

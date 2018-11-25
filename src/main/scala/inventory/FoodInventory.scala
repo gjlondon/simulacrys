@@ -8,7 +8,11 @@ import scala.util.Random
 case class FoodInventory private(contents: List[FoodItem]) {
 
   def deductMeal(meal: Meal): FoodInventory = {
+    println(s"before $contents")
+
+    println(s"ingredients ${meal.ingredients}")
     val deductedInventory = contents.diff(meal.ingredients)
+    println(s"after $deductedInventory")
     FoodInventory(deductedInventory)
   }
 

@@ -1,15 +1,15 @@
 package person
 
+import constants.Constants.CALORIES_PER_KILO_OF_FAT
 import demographic._
 import inventory.FoodInventory
 import meal.Meal
+import resource.Calorie.calorie
 import resource._
 import squants.energy.Energy
 import squants.mass._
-import Calorie.calorie
 import squants.motion.Distance
 import status._
-import constants.Constants.CALORIES_PER_KILO_OF_FAT
 
 import scala.util.Random
 
@@ -35,7 +35,7 @@ package object healthCalculations {
   def calcBodyMassIndex(height: Distance, weight: Mass): AreaDensity = weight / (height * height)
 }
 
-import healthCalculations.{calcBodyMassIndex, calcWeightStatus}
+import person.healthCalculations.{calcBodyMassIndex, calcWeightStatus}
 
 
 sealed trait Person {
@@ -90,8 +90,8 @@ case class Commoner(name: String, inventory: FoodInventory,
   }
 
   override def eat(): Commoner = {
-    val meal = candidateMeal(
-      fromComponents = inventory,
+    val meal = cheapestMeal(
+      candidateComponents = inventory.contents,
       requiredCalories = caloriesRequired
     )
 
@@ -129,22 +129,29 @@ case class Commoner(name: String, inventory: FoodInventory,
     this.copy(inventory = newInventory)
   }
 
-  def candidateMeal(fromComponents: FoodInventory, requiredCalories: Energy, size: Int = 1): Option[Meal] = {
-    if (size >= fromComponents.size) {
-      return None
+  def cheapestMeal(candidateComponents: List[FoodItem],
+                   selectedComponents: List[FoodItem] = List(),
+                   requiredCalories: Energy): Option[Meal] = {
+    if (candidateComponents.isEmpty) { return None }
+    val cheapestIngredient: FoodItem = candidateComponents.sortWith( _.units > _.units ).head
+    val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents)
+    val calorieDeficit = requiredCalories - caloriesSoFar
+    val requiredUnitsToCoverDeficit = Math.ceil(calorieDeficit / {
+      val foodType: SimpleFood = cheapestIngredient.sku
+      foodType.caloriesPerKg * foodType.unitWeight
+    }).toInt
+
+    if (cheapestIngredient.units >= requiredUnitsToCoverDeficit) {
+      val consumedIngredient = cheapestIngredient.copy(units = requiredUnitsToCoverDeficit)
+      return Some(Meal.fromIngredients(selectedComponents ++ List(consumedIngredient)))
     }
-    val ingredients = fromComponents.randomSample(size).contents
-    val meal = Meal.fromIngredients(ingredients)
-    if (meal.calories >= requiredCalories) {
-      Some(meal)
-    }
-    else {
-      candidateMeal(
-        fromComponents = fromComponents,
-        requiredCalories = requiredCalories,
-        size = size + 1
-      )
-    }
+
+    cheapestMeal(
+      candidateComponents = candidateComponents.tail,
+      selectedComponents = selectedComponents ++ List(cheapestIngredient),
+      requiredCalories = requiredCalories
+    )
+
   }
 
   def party(): Commoner = {
