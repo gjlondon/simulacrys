@@ -31,6 +31,12 @@ object FoodInventory {
 
   def apply(contents: List[FoodItem]): FoodInventory = {
 
+    val contentList: scala.List[FoodItem] = compactContents(contents)
+    //    println(s"""inventory compacted from $origSize to ${contentList.length}""")
+    new FoodInventory(contentList)
+  }
+
+  private def compactContents(contents: List[FoodItem]): List[FoodItem] = {
     val origSize = contents.size
     val similarItems: Map[(SimpleFood, Freshness), Seq[FoodItem]] = contents.groupBy { item => (item.sku, item.freshness) }
     val compactedContents: Iterable[FoodItem] = similarItems map {
@@ -40,9 +46,7 @@ object FoodInventory {
     }
     val filteredContents: Iterable[FoodItem] = compactedContents collect { case item if item.units > 0 => item }
     // TODO figure out why the toList call needs to be on a separate line
-    val contentList = filteredContents.toList
-//    println(s"""inventory compacted from $origSize to ${contentList.length}""")
-    new FoodInventory(contentList)
+    filteredContents.toList
   }
 
   def fromManifest(manifest: Map[SKU, Int]): FoodInventory = {
