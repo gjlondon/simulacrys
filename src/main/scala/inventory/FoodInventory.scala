@@ -11,6 +11,8 @@ case class FoodInventory private (contents: Map[SimpleFood, FoodItemGroup]) {
 //    println(s"ingredients ${meal.ingredients}")
     val ingredients: Map[SimpleFood, FoodItemGroup] = meal.ingredients
 
+    // TODO find a more efficient way to do this. Can it be expressed as
+    // a direct subtraction on inventories?
     val deductedInventory = contents map {
       case (food: SimpleFood, group: FoodItemGroup) =>
         ingredients.get(food) match {
