@@ -91,7 +91,7 @@ case class Commoner(name: String, inventory: FoodInventory,
 
   override def eat(): Commoner = {
     val meal = cheapestMeal(
-      candidateComponents = inventory.contents,
+      candidateComponents = inventory,
       requiredCalories = caloriesRequired
     )
 
@@ -124,34 +124,45 @@ case class Commoner(name: String, inventory: FoodInventory,
 
       val cropToFarm: SimpleFood = SimpleFood.randomCrop()
 
-    val cropYield = cropToFarm.randomYield
-    val newInventory = inventory + cropYield
+    val cropYield: Int = cropToFarm.randomYield
+    val newGroup = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku=cropToFarm)
+
+    val newInventoryContents = inventory.contents.get(cropToFarm) match {
+      case None =>
+        inventory.contents + (cropToFarm -> newGroup)
+      case Some(existingGroup) =>
+        val updatedGroup = existingGroup + newGroup
+        inventory.contents.updated(cropToFarm, updatedGroup)
+    }
+    val newInventory = inventory.copy(contents = newInventoryContents)
     this.copy(inventory = newInventory)
   }
 
-  def cheapestMeal(candidateComponents: List[FoodItemGroup],
-                   selectedComponents: List[FoodItemGroup] = List(),
+  def cheapestMeal(candidateComponents: FoodInventory,
+                   selectedComponents: FoodInventory = FoodInventory(Map[SimpleFood, FoodItemGroup]()),
                    requiredCalories: Energy): Option[Meal] = {
     if (candidateComponents.isEmpty) { return None }
-    val cheapestIngredient: FoodItemGroup = candidateComponents.sortWith( _.units > _.units ).head
-    val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents)
+    val cheapestIngredient: FoodItemGroup = candidateComponents.cheapestComponent
+    val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents.contents)
     val calorieDeficit = requiredCalories - caloriesSoFar
+    val foodType: SimpleFood = cheapestIngredient.sku
+
     val requiredUnitsToCoverDeficit = Math.ceil(calorieDeficit / {
-      val foodType: SimpleFood = cheapestIngredient.sku
       foodType.caloriesPerKg * foodType.unitWeight
     }).toInt
 
-    if (cheapestIngredient.units >= requiredUnitsToCoverDeficit) {
-      val consumedIngredient = cheapestIngredient.copy(units = requiredUnitsToCoverDeficit)
-      return Some(Meal.fromIngredients(selectedComponents ++ List(consumedIngredient)))
+    if (cheapestIngredient.size >= requiredUnitsToCoverDeficit) {
+      val consumedUnits = cheapestIngredient.collectCheapestUnits(requiredUnitsToCoverDeficit)
+      return Some(Meal.fromIngredients(selectedComponents.contents.updated(foodType, consumedUnits)))
     }
 
+    val consumedContents = selectedComponents.contents.updated(foodType, cheapestIngredient)
+    val remainingContents = candidateComponents.contents - foodType
     cheapestMeal(
-      candidateComponents = candidateComponents.tail,
-      selectedComponents = selectedComponents ++ List(cheapestIngredient),
+      candidateComponents = FoodInventory(contents = remainingContents),
+      selectedComponents = FoodInventory(contents = consumedContents),
       requiredCalories = requiredCalories
     )
-
   }
 
   def party(): Commoner = {

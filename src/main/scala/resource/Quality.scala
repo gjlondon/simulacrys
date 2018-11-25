@@ -8,7 +8,7 @@ case object Spoiled extends Freshness
 case object Old extends Freshness
 case object Fresh extends Freshness
 
-sealed trait Durability extends Durability
+sealed trait Durability extends Quality
 
 case object Robust extends Durability
 case object Fair extends Durability

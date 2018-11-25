@@ -15,9 +15,15 @@ object Meal {
   }
 
   def caloriesInIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Energy = {
-    ingredients.foldLeft(Joules(0)) { (total, ingredient) =>
-      val foodType: SimpleFood = ingredient.sku
-      total + foodType.caloriesPerKg * foodType.unitWeight * ingredient.units
+    ingredients.foldLeft(Joules(0)) { case (total: Energy, (foodType: SimpleFood, ingredientGroup: FoodItemGroup)) =>
+      val caloriesPerKg = foodType.caloriesPerKg
+      val unitWeight = foodType.unitWeight
+      val caloriesInGroup = ingredientGroup.contents.foldLeft(Joules(0)) { case (groupTotal: Energy, (_, quantity: Int)) =>
+        val caloriesFromIngredient = caloriesPerKg * unitWeight * quantity
+        groupTotal + caloriesFromIngredient
+
+      }
+      caloriesInGroup
     }
   }
 }

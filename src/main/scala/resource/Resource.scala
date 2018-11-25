@@ -28,6 +28,7 @@ case object Farming extends Endeavor
 sealed trait ItemGroup[T <: Quality]{
   val contents: Map[T, Int]
   val sku: SKU
+  val size: Int = contents.size
 
   protected def mergeContents(rightGroup: ItemGroup[T], op: (Int, Int) => Int): Map[T, Int] = {
     val leftContents = this.contents
@@ -51,6 +52,35 @@ case class FoodItemGroup(contents: Map[Freshness, Int], sku: SimpleFood) extends
   def -(rhs: FoodItemGroup): FoodItemGroup = {
     val mergedContents = mergeContents(rhs, op = { _ - _ })
     FoodItemGroup(contents=mergedContents, sku=sku)
+  }
+
+  def collectCheapestUnits(unitsToConsume: Int): FoodItemGroup = {
+    // TODO make tailrec
+    val valueSortedContents = this.contents.toList.sortWith { _._2 > _._2 }
+    val cheapestItem = valueSortedContents.head
+    val cheapestQuantity = cheapestItem._2
+    val freshnessOfCheapest = cheapestItem._1
+
+    if (cheapestQuantity >= unitsToConsume) {
+      val contentsToDeduct = Map[Freshness, Int](freshnessOfCheapest -> unitsToConsume)
+      FoodItemGroup(contents = contentsToDeduct, sku=sku)
+    }
+    else {
+      val contentsToDeduct = Map[Freshness, Int](freshnessOfCheapest -> cheapestQuantity)
+      val groupToDeduct = FoodItemGroup(contents = contentsToDeduct, sku = sku)
+      val remainingItems = this - groupToDeduct
+      groupToDeduct + remainingItems.collectCheapestUnits(unitsToConsume - cheapestQuantity)
+    }
+  }
+}
+
+object FoodItemGroup {
+  def randomAmountOf(food: SimpleFood, max: Int = 20): FoodItemGroup = {
+    val contents = Map[Freshness, Int](
+      Fresh -> Random.nextInt(max / 2),
+      Old -> Random.nextInt(max / 2),
+    )
+    FoodItemGroup(contents = contents, sku=food)
   }
 }
 
@@ -83,10 +113,10 @@ sealed trait SimpleFood extends Commodity {
   val yieldMean: Int  // units in average harvest
   val yieldStd: Int // variance of harvest
 
-  def randomYield: FoodItemGroup = {
+  def randomYield: Int = {
     val surplus = Math.floor(yieldStd * Random.nextGaussian())
     val cropYield = Math.floor(Math.max(yieldMean + surplus, 0)).toInt
-    FoodItemGroup(sku = this, freshness = Fresh, units=cropYield)
+    cropYield
   }
 }
 

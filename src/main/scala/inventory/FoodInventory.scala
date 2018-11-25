@@ -24,11 +24,17 @@ case class FoodInventory(contents: Map[SimpleFood, FoodItemGroup]) {
     FoodInventory(deductedInventory)
   }
 
+  val isEmpty: Boolean = contents.isEmpty
   val size: Int = contents.size
+
+  def cheapestComponent: FoodItemGroup = {
+    contents.values.toList.sortWith { case (a: FoodItemGroup, b: FoodItemGroup) => a.size  > b.size }.head
+  }
 //
 //  def randomSample(n: Int): FoodInventory = {
 //    FoodInventory(Random.shuffle(contents).take(n))
 //  }
+
 
   def +(newInventory: FoodInventory): FoodInventory = {
     FoodInventory(contents ++ newInventory.contents)
@@ -76,15 +82,15 @@ object FoodInventory {
 //    // TODO figure out why the toList call needs to be on a separate line
 //    filteredContents
 //  }
-
-  def fromManifest(manifest: Map[SKU, Int]): FoodInventory = {
-    val contents = manifest.flatMap { case (sku, amount) =>
-      List.fill(amount) {
-        sku match {
-          case foodType: SimpleFood => FoodItemGroup(sku = foodType, units = amount, freshness = Fresh)
-        }
-      }
-    }.toList
-    FoodInventory(contents)
-  }
+//
+//  def fromManifest(manifest: Map[SKU, Int]): FoodInventory = {
+//    val contents = manifest.flatMap { case (sku, amount) =>
+//      List.fill(amount) {
+//        sku match {
+//          case foodType: SimpleFood => FoodItemGroup(sku = foodType, units = amount, freshness = Fresh)
+//        }
+//      }
+//    }.toList
+//    FoodInventory(contents)
+//  }
 }
