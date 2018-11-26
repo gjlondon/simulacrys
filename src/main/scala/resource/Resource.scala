@@ -1,5 +1,6 @@
 package resource
 
+import constants.CropYields
 import squants.energy.{Energy, Kilojoules, SpecificEnergy}
 import squants.mass.{Grams, Kilograms, Mass}
 
@@ -143,19 +144,18 @@ object SimpleFood {
   }
 }
 
-
 case object Beans extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Kilograms(.25)
-  override val yieldMean: Int = 5
-  override val yieldStd: Int = 3
+  override lazy val yieldMean: Int = CropYields.means(this)
+  override lazy val yieldStd: Int = CropYields.stdevs(this)
 }
 
 case object Meat extends SimpleFood {
   val caloriesPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Grams(100)
-  override val yieldMean: Int = 4
-  override val yieldStd: Int = 2
+  override lazy val yieldMean: Int = CropYields.means(this)
+  override lazy val yieldStd: Int = CropYields.stdevs(this)
 }
 
 sealed trait MacroNutrient extends Property{
@@ -169,8 +169,6 @@ sealed trait MacroNutrient extends Property{
     }
   }
 }
-
-
 
 case object Fat extends MacroNutrient {
   override val caloriesPerUnit: Energy = Kilojoules(1000)
