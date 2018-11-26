@@ -1,14 +1,18 @@
 package clock
 
+import com.github.nscala_time.time.Imports._
+import org.joda.time.DateTime
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import world.World
 
 import scala.annotation.tailrec
 
 object Clock {
   val PARALLEL = false
+  val dtFMT: DateTimeFormatter = DateTimeFormat.mediumDateTime()
 
   @tailrec
-  def tick(tickNum: Int = 0, maxTicks: Int, world: World): World = {
+  def tick(tickNum: Int = 0, maxTicks: Int, world: World, time: DateTime): World = {
     if (tickNum >= maxTicks) return world
 
 
@@ -28,14 +32,14 @@ object Clock {
       }
 
     val newWorld = World.fromLocations(newLocations.toVector)
-    printTick(tickNum, newWorld = newWorld)
+    printTick(tickNum, newWorld = newWorld, time = time)
 
-    tick(tickNum + 1, maxTicks, newWorld)
+    tick(tickNum + 1, maxTicks, newWorld, time = time + 1.hours)
   }
 
-  private def printTick(tickNum: Int, newWorld: World): Unit = {
+  private def printTick(tickNum: Int, newWorld: World, time: DateTime): Unit = {
     if (tickNum % 10 == 0) {
-      println(s"Tick number $tickNum")
+      println(s"Tick number $tickNum at ${dtFMT.print(time)}")
       newWorld.printSummary()
     }
   }

@@ -18,6 +18,8 @@ libraryDependencies += {
   "com.lihaoyi" % "ammonite" % version % "test" cross CrossVersion.full
 }
 
+libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.20.0"
+
 sourceGenerators in Test += Def.task {
   val file = (sourceManaged in Test).value / "amm.scala"
   IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
