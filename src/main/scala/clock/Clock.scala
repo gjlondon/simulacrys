@@ -20,13 +20,13 @@ object Clock {
     val newLocations =
       if (PARALLEL) {
         world.grid.positions.par.map { loc =>
-          val updatedPopulace = loc.populace map { p => p.act() }
+          val updatedPopulace = loc.populace map { p => p.act(time = time) }
           loc.withNewPopulace(populace = updatedPopulace)
         }
       }
       else {
         world.grid.positions.map { loc =>
-          val updatedPopulace = loc.populace map { p => p.act() }
+          val updatedPopulace = loc.populace map { p => p.act(time = time) }
           loc.withNewPopulace(populace = updatedPopulace)
         }
       }

@@ -4,6 +4,8 @@ import constants.Constants.CALORIES_PER_KILO_OF_FAT
 import demographic._
 import inventory.FoodInventory
 import meal.Meal
+import org.joda.time.DateTime
+import person.Commoner.{eat, farm, metabolize, party}
 import resource.Calorie.calorie
 import resource._
 import squants.energy.Energy
@@ -37,7 +39,6 @@ package object healthCalculations {
 
 import person.healthCalculations.{calcBodyMassIndex, calcWeightStatus}
 
-
 sealed trait Person {
   val name: String
   val inventory: FoodInventory
@@ -51,12 +52,12 @@ sealed trait Person {
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
-  def eat(): Person
-  def act(): Person
-  def metabolize(): Person
-  def relax(): Unit
-
-
+  def act(time: DateTime): Person
+// TODO figure out how to make these covariant so they can be defined on the trait
+  //  val eat: Commoner => Commoner
+//  val act: (Commoner, DateTime) => Commoner
+//  val metabolize: Commoner => Commoner
+//  val relax: Commoner => Commoner
 
   val caloriesRequired: Energy = {
     val required: Int = (age: AgeBracket, gender) match {
@@ -80,35 +81,59 @@ case class Commoner(name: String, inventory: FoodInventory,
                     availableBodyFat: Mass, leanBodyMass: Mass,
                     health: HealthStatus = Fine) extends Person {
 
-  override def metabolize(): Commoner = {
-    val fatBurned = caloriesRequired / CALORIES_PER_KILO_OF_FAT
+  def act(time: DateTime): Commoner =  {
 
-    this.copy(
-      availableBodyFat = availableBodyFat - fatBurned,
-      health = if (availableBodyFat <= Kilograms(0)) Dead else health
+    val afterMetabolism = metabolize(this)
+    val afterEating = eat(afterMetabolism)
+
+    afterEating.weightStatus match {
+      case Obese | Overweight => party(afterEating)
+      case Normal | Underweight | DangerouslyLow => farm(afterEating)
+    }
+  }
+}
+
+object Commoner {
+
+
+  val metabolize: Commoner => Commoner = { person: Commoner =>
+    val fatBurned = person.caloriesRequired / CALORIES_PER_KILO_OF_FAT
+
+    person.copy (
+      availableBodyFat = person.availableBodyFat - fatBurned,
+      health = if (person.availableBodyFat <= Kilograms(0)) Dead else person.health
     )
   }
 
-  override def eat(): Commoner = {
-    val meal = cheapestMeal(
-      candidateComponents = inventory,
-      requiredCalories = caloriesRequired
+  //  override def metabolize(): Commoner = {
+  //    val fatBurned = caloriesRequired / CALORIES_PER_KILO_OF_FAT
+  //
+  //    this.copy(
+  //      availableBodyFat = availableBodyFat - fatBurned,
+  //      health = if (availableBodyFat <= Kilograms(0)) Dead else health
+  //    )
+  //  }
+
+  val eat: Commoner => Commoner = { person: Commoner =>
+    val meal = Meal.cheapestMeal(
+      candidateComponents = person.inventory,
+      requiredCalories = person.caloriesRequired
     )
 
     meal match {
-      case None => this
+      case None => person
       case Some(eatenMeal) =>
         val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
-        this.copy(
-          inventory = inventory.deductMeal(eatenMeal),
-          availableBodyFat = availableBodyFat + fatGained
+        person.copy(
+          inventory = person.inventory.deductMeal(eatenMeal),
+          availableBodyFat = person.availableBodyFat + fatGained
         )
     }
   }
 
 
 
-  def farm(): Commoner = {
+  val farm: Commoner => Commoner = { person: Commoner =>
     /**
     People can take advantage of local available arable land to produce a certain quantity of
     crops and/or live stock.
@@ -122,72 +147,31 @@ case class Commoner(name: String, inventory: FoodInventory,
 
       */
 
-      val cropToFarm: SimpleFood = SimpleFood.randomCrop()
+    val cropToFarm: SimpleFood = SimpleFood.randomCrop()
 
     val cropYield: Int = cropToFarm.randomYield
     val newGroup = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku=cropToFarm)
 
-    val newInventoryContents = inventory.contents.get(cropToFarm) match {
+    val newInventoryContents = person.inventory.contents.get(cropToFarm) match {
       case None =>
-        inventory.contents + (cropToFarm -> newGroup)
+        person.inventory.contents + (cropToFarm -> newGroup)
       case Some(existingGroup) =>
         val updatedGroup = existingGroup + newGroup
-        inventory.contents.updated(cropToFarm, updatedGroup)
+        person.inventory.contents.updated(cropToFarm, updatedGroup)
     }
-    val newInventory = inventory.copy(contents = newInventoryContents)
-    this.copy(inventory = newInventory)
+    val newInventory = person.inventory.copy(contents = newInventoryContents)
+    person.copy(inventory = newInventory)
   }
 
-  def cheapestMeal(candidateComponents: FoodInventory,
-                   selectedComponents: FoodInventory = FoodInventory(Map[SimpleFood, FoodItemGroup]()),
-                   requiredCalories: Energy): Option[Meal] = {
-    // We're out of ingredients
-    if (candidateComponents.isEmpty) { return None }
+  val relax: Commoner => Commoner = { c: Commoner => {
+    //    println(s"$name is having a good time")
+    c
+  }}
 
-    val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents.contents)
-    val calorieDeficit = requiredCalories - caloriesSoFar
 
-    // we need to add more ingredients to get enough calories
-    val cheapestFood: FoodItemGroup = candidateComponents.cheapestComponent
-    val foodType: SimpleFood = cheapestFood.sku
-    val requiredUnitsToCoverDeficit = Math.ceil(
-      calorieDeficit / (foodType.caloriesPerKg * foodType.unitWeight)
-    ).toInt
-
-    if (cheapestFood.size >= requiredUnitsToCoverDeficit) {
-      val cheapestIngredients = cheapestFood.collectCheapestUnits(requiredUnitsToCoverDeficit)
-      val finalIngredientsForMeal = selectedComponents.contents.updated(foodType, cheapestIngredients)
-      return Some(Meal.fromIngredients(finalIngredientsForMeal))
-    }
-
-    val consumedContents = selectedComponents.contents.updated(foodType, cheapestFood)
-    val remainingContents = candidateComponents.contents - foodType
-    cheapestMeal(
-      candidateComponents = FoodInventory(contents = remainingContents),
-      selectedComponents = FoodInventory(contents = consumedContents),
-      requiredCalories = requiredCalories
-    )
+  val party: Commoner => Commoner = { c: Commoner =>
+    relax(c)
   }
-
-  def party(): Commoner = {
-    relax()
-    this
-  }
-
-  override def relax(): Unit = {
-//    println(s"$name is having a good time")
-  }
-
-  override def act(): Commoner = {
-    val afterMetabolism = metabolize()
-    val afterEating = afterMetabolism.eat()
-
-    afterEating.weightStatus match {
-      case Obese | Overweight => afterEating.party()
-      case Normal | Underweight | DangerouslyLow => afterEating.farm()
-    }
-  }
-
 
 }
 
