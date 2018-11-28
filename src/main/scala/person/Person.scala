@@ -83,13 +83,14 @@ case class Commoner(name: String, inventory: FoodInventory,
 
   def act(time: DateTime): Commoner =  {
 
-    val afterMetabolism = metabolize(this)
-    val afterEating = eat(afterMetabolism)
-
-    afterEating.weightStatus match {
-      case Obese | Overweight => party(afterEating)
-      case Normal | Underweight | DangerouslyLow => farm(afterEating)
+    val labor = (c: Commoner) => c.weightStatus match {
+      case Obese | Overweight => party(c)
+      case Normal | Underweight | DangerouslyLow => farm(c)
     }
+
+    val act = metabolize andThen eat andThen labor
+
+    act(this)
   }
 }
 
