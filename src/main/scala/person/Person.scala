@@ -76,6 +76,11 @@ sealed trait Person {
 }
 
 
+object TypicalTimes {
+  val mealHours: Set[Int] = Set(8, 12, 18)
+  val metabolismHour = 7
+}
+
 case class Commoner(name: String, inventory: FoodInventory,
                     age: AgeBracket, gender: Gender, height: Distance,
                     availableBodyFat: Mass, leanBodyMass: Mass,
@@ -83,15 +88,38 @@ case class Commoner(name: String, inventory: FoodInventory,
 
   def act(time: DateTime): Commoner =  {
 
-    val labor = (c: Commoner) => c.weightStatus match {
-      case Obese | Overweight => party(c)
-      case Normal | Underweight | DangerouslyLow => farm(c)
-    }
+    val candidateActions: List[Commoner => Commoner] = List(
+      metabolizeIfTime(time),
+      eatIfTime(time),
+      chooseLabor(time)
+    )
 
-    val act = metabolize andThen eat andThen labor
+    val act: Commoner => Commoner = candidateActions.tail.foldLeft(candidateActions.head) { (chain, next) =>
+      chain andThen next
+    }
 
     act(this)
   }
+
+  def eatIfTime(time: DateTime): Commoner => Commoner = {
+    val currentHour = time.getHourOfDay
+    if (TypicalTimes.mealHours.contains(currentHour)) eat
+    else pass
+  }
+
+  def metabolizeIfTime(time: DateTime): Commoner => Commoner = {
+    val currentHour = time.getHourOfDay
+    if (TypicalTimes.metabolismHour == currentHour) metabolize
+    else pass
+  }
+
+  def chooseLabor(time: DateTime): Commoner => Commoner =
+    (c: Commoner) => c.weightStatus match {
+    case Obese | Overweight => party(c)
+    case Normal | Underweight | DangerouslyLow => farm(c)
+  }
+
+  def pass: Commoner => Commoner = (c: Commoner) => c
 }
 
 object Commoner {
