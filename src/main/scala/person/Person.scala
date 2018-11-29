@@ -5,7 +5,7 @@ import demographic._
 import inventory.FoodInventory
 import meal.Meal
 import org.joda.time.DateTime
-import person.Commoner.{eat, farm, metabolize, party}
+
 import resource.Calorie.calorie
 import resource._
 import squants.energy.Energy
@@ -74,6 +74,8 @@ sealed trait Person {
 
     required * calorie
   }
+
+  val needsFood: Boolean = inventory.totalAvailableCalories < caloriesRequired * 10
 }
 
 
@@ -86,6 +88,8 @@ case class Commoner(name: String, inventory: FoodInventory,
                     age: AgeBracket, gender: Gender, height: Distance,
                     availableBodyFat: Mass, leanBodyMass: Mass,
                     health: HealthStatus = Fine) extends Person {
+
+  import CommonerActions.candidateActions
 
   def act(time: DateTime, world: World): Commoner =  {
 
@@ -123,8 +127,35 @@ case class Commoner(name: String, inventory: FoodInventory,
   def pass: Commoner => Commoner = (c: Commoner) => c
 }
 
-object Commoner {
+object CommonerActions {
 
+  def shouldMetabolize(time: DateTime, world: World, person: Commoner): Boolean = {
+    TypicalTimes.metabolismHour == time.getHourOfDay
+  }
+
+  def shouldEat(time: DateTime, world: World, person: Commoner): Boolean = {
+    TypicalTimes.mealHours.contains(time.getHourOfDay)
+  }
+
+  def shouldFarm(time: DateTime, world: World, person: Commoner): Boolean = {
+    val isLightOut = time.getHourOfDay >= 7 && time.getHourOfDay < 18
+    isLightOut && person.needsFood
+  }
+
+  def shouldRelax(time: DateTime, world: World, person: Commoner): Boolean = {
+    val isEvening = time.getHourOfDay >= 18 && time.getHourOfDay < 22
+    isEvening
+  }
+
+  def shouldSleep(time: DateTime, world: World, person: Commoner): Boolean = {
+    val isNight = time.getHourOfDay >= 22 && time.getHourOfDay < 7
+    isNight
+  }
+
+  def shouldProcreate(time: DateTime, world: World, person: Commoner): Boolean = {
+    val isFunkyTime = time.getHourOfDay == 21
+    isFunkyTime && !person.needsFood
+  }
 
   val metabolize: Commoner => Commoner = { person: Commoner =>
     val fatBurned = person.caloriesRequired / CALORIES_PER_KILO_OF_FAT
@@ -193,16 +224,22 @@ object Commoner {
     person.copy(inventory = newInventory)
   }
 
-  val relax: Commoner => Commoner = { c: Commoner => {
-    //    println(s"$name is having a good time")
-    c
-  }}
-
-
+  val relax: Commoner => Commoner = { c: Commoner => c }
+  // TODO handle procreation
+  val procreate: Commoner => Commoner = { c: Commoner => c }
+  val sleep: Commoner => Commoner = { c: Commoner => c }
   val party: Commoner => Commoner = { c: Commoner =>
     relax(c)
   }
 
+  val candidateActions: ActionCandidates = List(
+    (metabolize, shouldMetabolize),
+    (eat, shouldEat),
+    (farm, shouldFarm),
+    (relax, shouldRelax),
+    (procreate, shouldProcreate),
+    (sleep, shouldSleep)
+  )
 }
 
 object PersonNames {
