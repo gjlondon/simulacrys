@@ -12,6 +12,7 @@ import squants.energy.Energy
 import squants.mass._
 import squants.motion.Distance
 import status._
+import world.World
 
 import scala.util.Random
 
@@ -52,7 +53,7 @@ sealed trait Person {
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
-  def act(time: DateTime): Person
+  def act(time: DateTime, world: World): Person
 // TODO figure out how to make these covariant so they can be defined on the trait
   //  val eat: Commoner => Commoner
 //  val act: (Commoner, DateTime) => Commoner
@@ -86,7 +87,7 @@ case class Commoner(name: String, inventory: FoodInventory,
                     availableBodyFat: Mass, leanBodyMass: Mass,
                     health: HealthStatus = Fine) extends Person {
 
-  def act(time: DateTime): Commoner =  {
+  def act(time: DateTime, world: World): Commoner =  {
 
     val candidateActions: List[Commoner => Commoner] = List(
       metabolizeIfTime(time),

@@ -41,7 +41,7 @@ object Clock {
     tick(tickNum + 1, maxTicks, newWorld, time = time + 1.hours)
   }
 
-  private def debugPopulationGrowth(newWorld: World) = {
+  private def debugPopulationGrowth(newWorld: World): Unit = {
     val totalPopulation = newWorld.totalPopulation
     popSeries += totalPopulation
     val toCompare = 1000
