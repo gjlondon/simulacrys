@@ -3,12 +3,10 @@ import org.joda.time.DateTime
 import org.joda.time.chrono.GJChronology
 import world.World
 
-object Configuration {
-  val MAX_TICKS = 1000
-}
+
 
 object Main extends App {
-  import Configuration.MAX_TICKS
+  import configuration.Configuration.MAX_TICKS
   val chrono = GJChronology.getInstance
 
   override def main(args: Array[String]): Unit = {
