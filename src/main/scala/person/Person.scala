@@ -1,11 +1,11 @@
 package person
 
+import configuration.Configuration
 import constants.Constants.CALORIES_PER_KILO_OF_FAT
 import demographic._
 import inventory.FoodInventory
 import meal.Meal
 import org.joda.time.DateTime
-
 import resource.Calorie.calorie
 import resource._
 import squants.energy.Energy
@@ -14,6 +14,7 @@ import squants.motion.Distance
 import status._
 import world.World
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 sealed trait WeightStatus
@@ -92,39 +93,22 @@ case class Commoner(name: String, inventory: FoodInventory,
   import CommonerActions.candidateActions
 
   def act(time: DateTime, world: World): Commoner =  {
+    performNextAction(time, world, this, candidateActions)
+  }
 
-    val candidateActions: List[Commoner => Commoner] = List(
-      metabolizeIfTime(time),
-      eatIfTime(time),
-      chooseLabor(time)
-    )
-
-    val act: Commoner => Commoner = candidateActions.tail.foldLeft(candidateActions.head) { (chain, next) =>
-      chain andThen next
+  @tailrec
+  private def performNextAction(time: DateTime, world: World, person: Commoner, candidates: ActionCandidates): Commoner = {
+    candidates match {
+      case Nil => person
+      case (actionLabel, action, condition) :: remainingCandidates =>
+        val shouldAct = condition(time, world, person)
+        if (Configuration.DEBUG && shouldAct)
+          println(s"Person ${person.name} should perform $actionLabel at time $time")
+        performNextAction(time, world,
+          if (shouldAct) action(person) else person,
+          remainingCandidates)
     }
-
-    act(this)
   }
-
-  def eatIfTime(time: DateTime): Commoner => Commoner = {
-    val currentHour = time.getHourOfDay
-    if (TypicalTimes.mealHours.contains(currentHour)) eat
-    else pass
-  }
-
-  def metabolizeIfTime(time: DateTime): Commoner => Commoner = {
-    val currentHour = time.getHourOfDay
-    if (TypicalTimes.metabolismHour == currentHour) metabolize
-    else pass
-  }
-
-  def chooseLabor(time: DateTime): Commoner => Commoner =
-    (c: Commoner) => c.weightStatus match {
-    case Obese | Overweight => party(c)
-    case Normal | Underweight | DangerouslyLow => farm(c)
-  }
-
-  def pass: Commoner => Commoner = (c: Commoner) => c
 }
 
 object CommonerActions {
@@ -148,7 +132,7 @@ object CommonerActions {
   }
 
   def shouldSleep(time: DateTime, world: World, person: Commoner): Boolean = {
-    val isNight = time.getHourOfDay >= 22 && time.getHourOfDay < 7
+    val isNight = time.getHourOfDay >= 22 || time.getHourOfDay < 7
     isNight
   }
 
@@ -165,15 +149,6 @@ object CommonerActions {
       health = if (person.availableBodyFat <= Kilograms(0)) Dead else person.health
     )
   }
-
-  //  override def metabolize(): Commoner = {
-  //    val fatBurned = caloriesRequired / CALORIES_PER_KILO_OF_FAT
-  //
-  //    this.copy(
-  //      availableBodyFat = availableBodyFat - fatBurned,
-  //      health = if (availableBodyFat <= Kilograms(0)) Dead else health
-  //    )
-  //  }
 
   val eat: Commoner => Commoner = { person: Commoner =>
     val meal = Meal.cheapestMeal(
@@ -233,12 +208,12 @@ object CommonerActions {
   }
 
   val candidateActions: ActionCandidates = List(
-    (metabolize, shouldMetabolize),
-    (eat, shouldEat),
-    (farm, shouldFarm),
-    (relax, shouldRelax),
-    (procreate, shouldProcreate),
-    (sleep, shouldSleep)
+    ("metabolize", metabolize, shouldMetabolize),
+    ("eat", eat, shouldEat),
+    ("farm", farm, shouldFarm),
+    ("relax", relax, shouldRelax),
+    ("procreate", procreate, shouldProcreate),
+    ("sleep", sleep, shouldSleep)
   )
 }
 

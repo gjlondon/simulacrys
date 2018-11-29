@@ -3,5 +3,5 @@ import world.World
 
 package object person {
 
-  type ActionCandidates = List[(Commoner => Commoner, (DateTime, World, Commoner) => Boolean)]
+  type ActionCandidates = List[(String, Commoner => Commoner, (DateTime, World, Commoner) => Boolean)]
 }
