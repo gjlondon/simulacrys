@@ -10,22 +10,9 @@ object Meal {
 
   def fromIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Meal = {
     Meal(
-      calories = caloriesInIngredients(ingredients),
+      calories = FoodInventory.caloriesInIngredients(ingredients),
       ingredients = ingredients
     )
-  }
-
-  def caloriesInIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Energy = {
-    ingredients.foldLeft(Joules(0)) { case (total: Energy, (foodType: SimpleFood, ingredientGroup: FoodItemGroup)) =>
-      val caloriesPerKg = foodType.caloriesPerKg
-      val unitWeight = foodType.unitWeight
-      val caloriesInGroup = ingredientGroup.contents.foldLeft(Joules(0)) { case (groupTotal: Energy, (_, quantity: Int)) =>
-        val caloriesFromIngredient = caloriesPerKg * unitWeight * quantity
-        groupTotal + caloriesFromIngredient
-
-      }
-      caloriesInGroup
-    }
   }
 
   def cheapestMeal(candidateComponents: FoodInventory,
@@ -34,7 +21,7 @@ object Meal {
     // We're out of ingredients
     if (candidateComponents.isEmpty) { return None }
 
-    val caloriesSoFar: Energy = Meal.caloriesInIngredients(selectedComponents.contents)
+    val caloriesSoFar: Energy = FoodInventory.caloriesInIngredients(selectedComponents.contents)
     val calorieDeficit = requiredCalories - caloriesSoFar
 
     // we need to add more ingredients to get enough calories

@@ -2,6 +2,8 @@ package inventory
 
 import meal.Meal
 import resource._
+import squants.Energy
+import squants.energy.{Energy, Joules}
 
 case class FoodInventory private (contents: Map[SimpleFood, FoodItemGroup]) {
 
@@ -26,6 +28,9 @@ case class FoodInventory private (contents: Map[SimpleFood, FoodItemGroup]) {
 
   val isEmpty: Boolean = contents.isEmpty
   val size: Int = contents.size
+  def totalAvailableCalories: Energy = {
+    FoodInventory.caloriesInIngredients(contents)
+  }
 
   def cheapestComponent: FoodItemGroup = {
     contents.values.toList.sortWith { case (a: FoodItemGroup, b: FoodItemGroup) => a.size  > b.size }.head
@@ -43,5 +48,18 @@ object FoodInventory {
       case (sku, group) if group.size > 0 => sku -> group
     }
     new FoodInventory(filteredContents)
+  }
+
+  def caloriesInIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Energy = {
+    ingredients.foldLeft(Joules(0)) { case (total: Energy, (foodType: SimpleFood, ingredientGroup: FoodItemGroup)) =>
+      val caloriesPerKg = foodType.caloriesPerKg
+      val unitWeight = foodType.unitWeight
+      val caloriesInGroup = ingredientGroup.contents.foldLeft(Joules(0)) { case (groupTotal: Energy, (_, quantity: Int)) =>
+        val caloriesFromIngredient = caloriesPerKg * unitWeight * quantity
+        groupTotal + caloriesFromIngredient
+
+      }
+      caloriesInGroup
+    }
   }
 }
