@@ -1,6 +1,7 @@
 package clock
 
 import com.github.nscala_time.time.Imports._
+import configuration.Configuration
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import world.World
@@ -34,7 +35,7 @@ object Clock {
       }
 
     val newWorld = World.fromLocations(newLocations.toVector)
-    debugPopulationGrowth(newWorld)
+    if (Configuration.DEBUG) debugPopulationGrowth(newWorld)
 
     printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
 
