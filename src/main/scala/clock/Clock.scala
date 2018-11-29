@@ -2,6 +2,7 @@ package clock
 
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration
+import location.Location
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import world.World
@@ -11,7 +12,6 @@ import scala.collection.mutable.ListBuffer
 
 
 object Clock {
-  val PARALLEL = false
   val dtFMT: DateTimeFormatter = DateTimeFormat.mediumDateTime()
   var popSeries = new ListBuffer[Int]
 
@@ -20,18 +20,13 @@ object Clock {
     if (tickNum >= maxTicks) return world
 
     // TODO replace with some kind of partial (was getting collection construction errors when I tried)
+
     val newLocations =
-      if (PARALLEL) {
-        world.grid.positions.par.map { loc =>
-          val updatedPopulace = loc.populace map { p => p.act(time = time, world = world) }
-          loc.withNewPopulace(populace = updatedPopulace)
-        }
+      if (Configuration.PARALLEL) {
+        world.grid.positions.par.map(updateLocation(time, world))
       }
       else {
-        world.grid.positions.map { loc =>
-          val updatedPopulace = loc.populace map { p => p.act(time = time, world = world) }
-          loc.withNewPopulace(populace = updatedPopulace)
-        }
+        world.grid.positions.map(updateLocation(time, world))
       }
 
     val newWorld = World.fromLocations(newLocations.toVector)
@@ -40,6 +35,11 @@ object Clock {
     printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
 
     tick(tickNum + 1, maxTicks, newWorld, time = time + 1.hours)
+  }
+
+  def updateLocation(time: DateTime, world: World)(loc: Location): Location = {
+    val updatedPopulace = loc.populace map { p => p.act(time = time, world = world) }
+    loc.withNewPopulace(populace = updatedPopulace)
   }
 
   private def debugPopulationGrowth(newWorld: World): Unit = {
