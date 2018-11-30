@@ -5,9 +5,11 @@ import demographic._
 import inventory.FoodInventory
 import org.joda.time.DateTime
 import resource.Calorie.calorie
+import squants.Time
 import squants.energy.Energy
 import squants.mass._
 import squants.motion.Distance
+import squants.time.Hours
 import status._
 import world.World
 
@@ -89,21 +91,37 @@ case class Commoner(name: String, inventory: FoodInventory,
   import actions.CommonerActions.candidateActions
 
   def act(time: DateTime, world: World): Commoner =  {
-    performNextAction(time, world, this, candidateActions)
+    performNextAction(time, world, this, candidateActions, Hours(1))
   }
 
   @tailrec
-  private def performNextAction(time: DateTime, world: World, person: Commoner, candidates: ActionCandidates): Commoner = {
+  private def performNextAction(datetime: DateTime, world: World,
+                                person: Commoner, candidates: ActionCandidates,
+                                timeRemainingInTick: Time): Commoner = {
     candidates match {
       case Nil => person
       case (action, condition) :: remainingCandidates =>
-        val shouldAct = condition(time, world, person)
+        val shouldAct = condition(datetime, world, person)
         if (Configuration.DEBUG && shouldAct)
-          println(s"Person ${person.name} should perform ${action.name} at time $time")
-        val personAfterAction: Commoner = if (shouldAct) action(person) else person
-        performNextAction(time, world,
-          personAfterAction,
-          remainingCandidates)
+          println(s"Person ${person.name} should perform ${action.name} at time $datetime")
+        val actionDuration = action.durationToComplete
+        if (shouldAct && actionDuration <= timeRemainingInTick) {
+          val personAfterAction: Commoner = action(person)
+          performNextAction(
+            datetime, world,
+            personAfterAction,
+            remainingCandidates,
+            timeRemainingInTick - actionDuration
+          )
+        }
+        else {
+          performNextAction(
+            datetime, world,
+            person,
+            remainingCandidates,
+            timeRemainingInTick
+          )
+        }
     }
   }
 }
