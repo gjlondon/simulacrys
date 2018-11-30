@@ -9,7 +9,7 @@ import squants.mass.Kilograms
 import status.Dead
 import world.World
 import constants.Constants.CALORIES_PER_KILO_OF_FAT
-import squants.time.Minutes
+import squants.time.{Hours, Minutes}
 
 trait Action[T <: Commoner] {
   val durationToComplete: Time
@@ -24,7 +24,7 @@ trait Performance[T <: Commoner] {
   val timeRemaining: Time
 }
 
-object metabolize extends Action[Commoner] {
+object Metabolize extends Action[Commoner] {
 
   override val durationToComplete: Time = Minutes(1)
   override val name: String = "Metabolize"
@@ -39,7 +39,69 @@ object metabolize extends Action[Commoner] {
       health = if (person.availableBodyFat <= Kilograms(0)) Dead else person.health
     )
   }
+}
 
+object Farm extends Action[Commoner] {
+  override val durationToComplete: Time = Hours(2)
+
+  override def apply(person: Commoner): Commoner = {
+    /**
+    People can take advantage of local available arable land to produce a certain quantity of
+    crops and/or live stock.
+
+      We'd like to be able to select a subset of possible crops ot farm, and then randomly generate a crop yield
+      amount based on a distribution that is specific to each type of crop. Ideally we could create a "yield map"
+      which would map from Type to Yield amount.
+
+      Ideally farms would have some degree of persistence so that we could model the fact that growing crops inevitably takes
+      time, but maybe that's a future feature.
+
+      */
+
+    val cropToFarm: SimpleFood = SimpleFood.randomCrop()
+
+    val cropYield: Int = cropToFarm.randomYield
+    val newGroup = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku=cropToFarm)
+
+    val newInventoryContents = person.inventory.contents.get(cropToFarm) match {
+      case None =>
+        person.inventory.contents + (cropToFarm -> newGroup)
+      case Some(existingGroup) =>
+        val updatedGroup = existingGroup + newGroup
+        person.inventory.contents.updated(cropToFarm, updatedGroup)
+    }
+    val newInventory = person.inventory.copy(contents = newInventoryContents)
+    person.copy(inventory = newInventory)
+  }
+
+  override val name: String = "Farm"
+  override val exclusive: Boolean = true
+  override val interruptable: Boolean = true
+}
+
+object Eat extends Action[Commoner] {
+  override val durationToComplete: Time = Minutes(30)
+
+  override def apply(person: Commoner): Commoner = {
+    val meal = Meal.cheapestMeal(
+      candidateComponents = person.inventory,
+      requiredCalories = person.caloriesRequired
+    )
+
+    meal match {
+      case None => person
+      case Some(eatenMeal) =>
+        val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
+        person.copy(
+          inventory = person.inventory.deductMeal(eatenMeal),
+          availableBodyFat = person.availableBodyFat + fatGained
+        )
+    }
+  }
+
+  override val name: String = "Eat"
+  override val exclusive: Boolean = true
+  override val interruptable: Boolean = false
 }
 
 object CommonerActions {
@@ -72,55 +134,6 @@ object CommonerActions {
     isFunkyTime && !person.needsFood
   }
 
-  val eat: Commoner => Commoner = { person: Commoner =>
-    val meal = Meal.cheapestMeal(
-      candidateComponents = person.inventory,
-      requiredCalories = person.caloriesRequired
-    )
-
-    meal match {
-      case None => person
-      case Some(eatenMeal) =>
-        val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
-        person.copy(
-          inventory = person.inventory.deductMeal(eatenMeal),
-          availableBodyFat = person.availableBodyFat + fatGained
-        )
-    }
-  }
-
-
-
-  val farm: Commoner => Commoner = { person: Commoner =>
-    /**
-    People can take advantage of local available arable land to produce a certain quantity of
-    crops and/or live stock.
-
-      We'd like to be able to select a subset of possible crops ot farm, and then randomly generate a crop yield
-      amount based on a distribution that is specific to each type of crop. Ideally we could create a "yield map"
-      which would map from Type to Yield amount.
-
-      Ideally farms would have some degree of persistence so that we could model the fact that growing crops inevitably takes
-      time, but maybe that's a future feature.
-
-      */
-
-    val cropToFarm: SimpleFood = SimpleFood.randomCrop()
-
-    val cropYield: Int = cropToFarm.randomYield
-    val newGroup = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku=cropToFarm)
-
-    val newInventoryContents = person.inventory.contents.get(cropToFarm) match {
-      case None =>
-        person.inventory.contents + (cropToFarm -> newGroup)
-      case Some(existingGroup) =>
-        val updatedGroup = existingGroup + newGroup
-        person.inventory.contents.updated(cropToFarm, updatedGroup)
-    }
-    val newInventory = person.inventory.copy(contents = newInventoryContents)
-    person.copy(inventory = newInventory)
-  }
-
   val relax: Commoner => Commoner = { c: Commoner => c }
   // TODO handle procreation
   val procreate: Commoner => Commoner = { c: Commoner => c }
@@ -130,9 +143,9 @@ object CommonerActions {
   }
 
   val candidateActions: ActionCandidates = List(
-    (metabolize, shouldMetabolize),
-//    ("eat", eat, shouldEat),
-//    ("farm", farm, shouldFarm),
+    (Metabolize, shouldMetabolize),
+    (Eat, shouldEat),
+    (Farm, shouldFarm),
 //    ("relax", relax, shouldRelax),
 //    ("procreate", procreate, shouldProcreate),
 //    ("sleep", sleep, shouldSleep)
