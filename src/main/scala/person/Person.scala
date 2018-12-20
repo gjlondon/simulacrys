@@ -1,5 +1,6 @@
 package person
 
+import actions.NoAction
 import configuration.Configuration
 import demographic._
 import inventory.FoodInventory
@@ -100,28 +101,19 @@ case class Commoner(name: String, inventory: FoodInventory,
                                 timeRemainingInTick: Time): Commoner = {
     candidates match {
       case Nil => person
-      case (action, condition) :: remainingCandidates =>
+      case (candidateAction, condition) :: remainingCandidates =>
         val shouldAct = condition(datetime, world, person)
         if (Configuration.DEBUG && shouldAct)
-          println(s"Person ${person.name} should perform ${action.name} at time $datetime")
-        val actionDuration = action.durationToComplete
-        if (shouldAct && actionDuration <= timeRemainingInTick) {
-          val personAfterAction: Commoner = action(person)
-          performNextAction(
-            datetime, world,
-            personAfterAction,
-            remainingCandidates,
-            timeRemainingInTick - actionDuration
-          )
-        }
-        else {
-          performNextAction(
-            datetime, world,
-            person,
-            remainingCandidates,
-            timeRemainingInTick
-          )
-        }
+          println(s"Person ${person.name} should perform ${candidateAction.name} at time $datetime")
+        val actionDuration = candidateAction.durationToComplete
+        val willAct = shouldAct && actionDuration <= timeRemainingInTick
+        val action = if (willAct) candidateAction else NoAction
+        performNextAction(
+          datetime, world,
+          action(person),
+          remainingCandidates,
+          timeRemainingInTick
+        )
     }
   }
 }

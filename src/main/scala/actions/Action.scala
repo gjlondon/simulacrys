@@ -24,6 +24,18 @@ trait Performance[T <: Commoner] {
   val timeRemaining: Time
 }
 
+object NoAction extends Action[Commoner] {
+
+  override val durationToComplete: Time = Minutes(0)
+  override val name: String = "No Action"
+  override val exclusive: Boolean = false
+  override val interruptable: Boolean = false
+
+  override def apply(person: Commoner): Commoner = {
+    person
+  }
+}
+
 object Metabolize extends Action[Commoner] {
 
   override val durationToComplete: Time = Minutes(1)
@@ -141,6 +153,7 @@ object CommonerActions {
   val party: Commoner => Commoner = { c: Commoner =>
     relax(c)
   }
+  val unit: Commoner => Commoner = { c: Commoner => c }
 
   val candidateActions: ActionCandidates = List(
     (Metabolize, shouldMetabolize),
