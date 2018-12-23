@@ -40,7 +40,7 @@ object Clock {
 
   def updateLocation(time: DateTime, world: World)(loc: Location): Location = {
     val updatedPopulace = loc.populace map { p => p.act(time = time, world = world) }
-    loc.withNewPopulace(populace = updatedPopulace)
+    loc.withNewPopulace(populace = updatedPopulace.living)
   }
 
   private def debugPopulationGrowth(newWorld: World): Unit = {

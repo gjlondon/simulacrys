@@ -7,6 +7,7 @@ import resource._
 import squants.mass.{Kilograms, Mass}
 import squants.motion.Distance
 import squants.space.{Centimeters, Meters}
+import status.Dead
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{SetLike, mutable}
@@ -16,7 +17,7 @@ import scala.util.Random
 class Populace(seq : Person*) extends Set[Person]
   with SetLike[Person, Populace]
   with Serializable
- {
+{
 
   override def empty: Populace = new Populace()
 
@@ -31,8 +32,10 @@ class Populace(seq : Person*) extends Set[Person]
   }
 
   def contains (elem: Person) : Boolean = seq exists (elem ==)
+  def living: Populace = this.filterNot( _.health == Dead )
 
   def iterator : Iterator[Person] = seq.iterator
+
 }
 
 object Populace {

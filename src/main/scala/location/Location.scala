@@ -12,7 +12,8 @@ sealed trait Location {
 
   val name: String
   val populace: Populace
-  def livingPopSize: Int = populace.filterNot( _.health == Dead ).size
+  def livingPopulace: Populace = populace.living
+  def livingPopSize: Int = livingPopulace.size
   def withNewPopulace(populace: Populace): Location  // TODO maybe replace with a lens?
 }
 
