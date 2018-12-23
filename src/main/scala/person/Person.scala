@@ -59,7 +59,7 @@ sealed trait Person extends Entity {
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
   def act(time: DateTime, world: World): Person
 
-  val caloriesRequired: Energy = {
+  val foodEnergyRequired: Energy = {
     val required: Int = (age: AgeBracket, gender) match {
       case (Child, Female) => 1500
       case (Child, Male) => 1600
@@ -74,12 +74,13 @@ sealed trait Person extends Entity {
     required * calorie
   }
 
-  val needsFood: Boolean = inventory.totalAvailableCalories < caloriesRequired * 10
+  val needsFood: Boolean = inventory.totalAvailableFoodEnergy < foodEnergyRequired * 10
 }
 
 object TypicalTimes {
   val mealHours: Set[Int] = Set(8, 12, 18)
   val metabolismHour = 7
+  val metabolismMinute = 0
 }
 
 case class Commoner(name: String,

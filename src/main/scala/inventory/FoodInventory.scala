@@ -28,8 +28,13 @@ case class FoodInventory private (contents: Map[SimpleFood, FoodItemGroup]) {
 
   val isEmpty: Boolean = contents.isEmpty
   val size: Int = contents.size
-  def totalAvailableCalories: Energy = {
-    FoodInventory.caloriesInIngredients(contents)
+  def totalAvailableFoodEnergy: Energy = {
+    FoodInventory.energyInIngredients(contents)
+  }
+
+  def totalAvailableCalories: Double = {
+    import resource.Calorie.calorie
+    totalAvailableFoodEnergy / calorie
   }
 
   def cheapestComponent: FoodItemGroup = {
@@ -50,14 +55,13 @@ object FoodInventory {
     new FoodInventory(filteredContents)
   }
 
-  def caloriesInIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Energy = {
+  def energyInIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Energy = {
     ingredients.foldLeft(Joules(0)) { case (total: Energy, (foodType: SimpleFood, ingredientGroup: FoodItemGroup)) =>
-      val caloriesPerKg = foodType.caloriesPerKg
+      val energyPerKg = foodType.energyPerKg
       val unitWeight = foodType.unitWeight
       val caloriesInGroup = ingredientGroup.contents.foldLeft(Joules(0)) { case (groupTotal: Energy, (_, quantity: Int)) =>
-        val caloriesFromIngredient = caloriesPerKg * unitWeight * quantity
-        groupTotal + caloriesFromIngredient
-
+        val energyFromIngredients = energyPerKg * unitWeight * quantity
+        groupTotal + energyFromIngredients
       }
       caloriesInGroup
     }

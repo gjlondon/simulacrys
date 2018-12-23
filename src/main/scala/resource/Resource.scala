@@ -123,12 +123,12 @@ case class FarmingTools(durability: Durability) extends Tool {
 }
 
 sealed trait SimpleFood extends Commodity {
-  val caloriesPerKg: SpecificEnergy
+  val energyPerKg: SpecificEnergy
   val yieldMean: Int  // units in average harvest
   val yieldStd: Int // variance of harvest
 
   def randomYield: Int = {
-    val surplus = Math.floor(yieldStd * Random.nextGaussian())
+    val surplus = Math.floor(yieldStd * Random.nextGaussian()).abs
     val cropYield = Math.floor(Math.max(yieldMean + surplus, 0)).toInt
     cropYield
   }
@@ -145,14 +145,14 @@ object SimpleFood {
 }
 
 case object Beans extends SimpleFood {
-  val caloriesPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
+  val energyPerKg: SpecificEnergy = (1650 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Kilograms(.25)
   override lazy val yieldMean: Int = CropYields.means(this)
   override lazy val yieldStd: Int = CropYields.stdevs(this)
 }
 
 case object Meat extends SimpleFood {
-  val caloriesPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
+  val energyPerKg: SpecificEnergy = (2500 * calorie) / Kilograms(1)
   override val unitWeight: Mass = Grams(100)
   override lazy val yieldMean: Int = CropYields.means(this)
   override lazy val yieldStd: Int = CropYields.stdevs(this)

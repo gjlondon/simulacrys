@@ -4,13 +4,20 @@ import inventory.FoodInventory
 import resource._
 import squants.energy.{Energy, Joules}
 
-case class Meal private (calories: Energy, ingredients: Map[SimpleFood, FoodItemGroup])
+case class Meal private (calories: Energy, ingredients: Map[SimpleFood, FoodItemGroup]) {
+
+  import resource.Calorie.calorie
+
+  def kilocalories: Double = {
+    calories / calorie
+  }
+}
 
 object Meal {
 
   def fromIngredients(ingredients: Map[SimpleFood, FoodItemGroup]): Meal = {
     Meal(
-      calories = FoodInventory.caloriesInIngredients(ingredients),
+      calories = FoodInventory.energyInIngredients(ingredients),
       ingredients = ingredients
     )
   }
@@ -21,14 +28,14 @@ object Meal {
     // We're out of ingredients
     if (candidateComponents.isEmpty) { return None }
 
-    val caloriesSoFar: Energy = FoodInventory.caloriesInIngredients(selectedComponents.contents)
+    val caloriesSoFar: Energy = FoodInventory.energyInIngredients(selectedComponents.contents)
     val calorieDeficit = requiredCalories - caloriesSoFar
 
     // we need to add more ingredients to get enough calories
     val cheapestFood: FoodItemGroup = candidateComponents.cheapestComponent
     val foodType: SimpleFood = cheapestFood.sku
     val requiredUnitsToCoverDeficit = Math.ceil(
-      calorieDeficit / (foodType.caloriesPerKg * foodType.unitWeight)
+      calorieDeficit / (foodType.energyPerKg * foodType.unitWeight)
     ).toInt
 
     if (cheapestFood.size >= requiredUnitsToCoverDeficit) {

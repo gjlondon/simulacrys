@@ -1,22 +1,22 @@
 package actions
 
-import configuration.Configuration
+import constants.Constants.{CALORIES_PER_KILO_OF_FAT, TICK_DURATION}
+import inventory.FoodInventory
 import meal.Meal
 import org.joda.time.DateTime
-import person.{ActionCandidates, Commoner, Person, TypicalTimes}
+import person.{ActionCandidates, Commoner, TypicalTimes}
 import resource.{FoodItemGroup, Fresh, Freshness, SimpleFood}
 import squants.Time
 import squants.mass.Kilograms
+import squants.time.{Hours, Minutes, Seconds}
 import status.Dead
 import world.World
-import constants.Constants.{CALORIES_PER_KILO_OF_FAT, TICK_DURATION}
-import squants.time.{Hours, Minutes, Seconds}
 
 object LocalConfig {
   val DEBUG = true
 }
 
-import LocalConfig.DEBUG
+import actions.LocalConfig.DEBUG
 
 trait Action[T <: Commoner] {
   def ticksRequired: Int = {
@@ -53,7 +53,7 @@ object Metabolize extends Action[Commoner] {
   override val interruptable: Boolean = false
 
   override def apply(person: Commoner): Commoner = {
-    val fatBurned = person.caloriesRequired / CALORIES_PER_KILO_OF_FAT
+    val fatBurned = person.foodEnergyRequired / CALORIES_PER_KILO_OF_FAT
 
     val updatedBodyFat = person.availableBodyFat - fatBurned
     val updatedHealth = if (updatedBodyFat <= Kilograms(0)) {
@@ -89,17 +89,28 @@ object Farm extends Action[Commoner] {
     val cropToFarm: SimpleFood = SimpleFood.randomCrop()
 
     val cropYield: Int = cropToFarm.randomYield
-    val newGroup = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku=cropToFarm)
+    val produce = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku=cropToFarm)
 
-    val newInventoryContents = person.inventory.contents.get(cropToFarm) match {
-      case None =>
-        person.inventory.contents + (cropToFarm -> newGroup)
-      case Some(existingGroup) =>
-        val updatedGroup = existingGroup + newGroup
-        person.inventory.contents.updated(cropToFarm, updatedGroup)
+    val newInventory = addProduceToInventory(produce = produce, inventory = person.inventory,
+      cropToFarm = cropToFarm)
+    if (DEBUG) {
+      println(s"Yield $produce")
+      println(s"old inventory ${person.name} ${person.inventory.contents.get(cropToFarm)}; new inventory ${newInventory.contents.get(cropToFarm)}")
     }
-    val newInventory = person.inventory.copy(contents = newInventoryContents)
     person.copy(inventory = newInventory)
+  }
+
+  def addProduceToInventory(produce: FoodItemGroup,
+                            inventory: FoodInventory,
+                            cropToFarm: SimpleFood): FoodInventory = {
+    val newInventoryContents = inventory.contents.get(cropToFarm) match {
+      case None =>
+        inventory.contents + (cropToFarm -> produce)
+      case Some(existingGroup) =>
+        val updatedGroup = existingGroup + produce
+        inventory.contents.updated(cropToFarm, updatedGroup)
+    }
+    inventory.copy(contents = newInventoryContents)
   }
 
   override val name: String = "Farm"
@@ -108,12 +119,13 @@ object Farm extends Action[Commoner] {
 }
 
 object Eat extends Action[Commoner] {
+  val DEBUG = true
   override val durationToComplete: Time = Minutes(30)
 
   override def apply(person: Commoner): Commoner = {
     val meal = Meal.cheapestMeal(
       candidateComponents = person.inventory,
-      requiredCalories = person.caloriesRequired
+      requiredCalories = person.foodEnergyRequired
     )
 
     meal match {
@@ -124,11 +136,15 @@ object Eat extends Action[Commoner] {
         person
       case Some(eatenMeal) =>
         val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
-        if (DEBUG) println(s"Yum meal $eatenMeal new fat $fatGained")
+        val newBodyFat = person.availableBodyFat + fatGained
+        val newInventory = person.inventory.deductMeal(eatenMeal)
+
+        if (DEBUG) println(f"Yum meal for ${person.name} ${eatenMeal.kilocalories}%1.3f new fat $fatGained to reach $newBodyFat." +
+          f"Remaining inventory has ${newInventory.totalAvailableCalories}%1.3f")
 
         person.copy(
-          inventory = person.inventory.deductMeal(eatenMeal),
-          availableBodyFat = person.availableBodyFat + fatGained
+          inventory = newInventory,
+          availableBodyFat = newBodyFat
         )
     }
   }
@@ -141,7 +157,7 @@ object Eat extends Action[Commoner] {
 object CommonerActions {
 
   def shouldMetabolize(time: DateTime, world: World, person: Commoner): Boolean = {
-    TypicalTimes.metabolismHour == time.getHourOfDay
+    (TypicalTimes.metabolismHour == time.getHourOfDay) && (TypicalTimes.metabolismMinute == time.getMinuteOfHour)
   }
 
   def shouldEat(time: DateTime, world: World, person: Commoner): Boolean = {
