@@ -1,6 +1,6 @@
 package person
 
-import actions.{Action, NoAction}
+import actions._
 import configuration.Configuration
 import demographic._
 import entity.Entity
@@ -53,7 +53,6 @@ sealed trait Person extends Entity {
   val height: Distance
   val leanBodyMass: Mass
   val availableBodyFat: Mass
-  val activityStatus: ActivityStatus
 
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
@@ -91,23 +90,60 @@ case class Commoner(name: String,
                     availableBodyFat: Mass,
                     leanBodyMass: Mass,
                     health: HealthStatus = Fine,
-                    activityStatus: ActivityStatus = Idle,
+                    currentActivity: CurrentActivity = Idle,
                     actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
                     inbox: Queue[Message] = Queue.empty[Message],
-                    outbox: Queue[Message] = Queue.empty[Message])
+                    outbox: Queue[Message] = Queue.empty[Message]
+                   )
   extends Person {
 
   import actions.CommonerActions.candidateActions
 
-  def receiveAction(action: Action[Commoner]): Commoner = {
-    this.activityStatus match {
-      case Busy | Incapacitated => this
-      case Idle => action(this).copy(activityStatus = Busy)
+  def act(time: DateTime, world: World): Commoner =  {
+    // by assumption, no action is allowed to take less than the length of a single tick
+    // so it's safe to assume that in a given tick, a person will take at most one action
+    currentActivity match {
+      case Incapacitated => this
+      case performance: CommonerPerformance =>
+        progressPerformance(performance, person = this)
+      case Idle =>
+        val action = selectAction(time, world, person = this, candidates = candidateActions)
+        initiatePerformance(action, person = this)
     }
   }
 
-  def act(time: DateTime, world: World): Commoner =  {
-    performNextAction(time, world, this, candidateActions, Hours(1))
+  def progressPerformance(performance: CommonerPerformance, person: Commoner): Commoner = {
+    val progressed = performance.copy(ticksElapsed = performance.ticksElapsed + 1)
+    if (progressed.ticksRemaining == 0) progressed.of(person).copy(currentActivity = Idle)
+    else person.copy(currentActivity = progressed)
+  }
+
+  @tailrec
+  private def selectAction(datetime: DateTime, world: World,
+                           person: Commoner,
+                           candidates: ActionCandidates): Action[Commoner] = {
+    candidates match {
+      case Nil => NoAction
+      case (candidateAction, condition) :: remainingCandidates =>
+        val shouldAct = condition(datetime, world, person)
+        if (Configuration.DEBUG && shouldAct) {
+          val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
+          println(msg)
+        }
+        if (shouldAct) candidateAction
+        else selectAction(
+          datetime, world,
+          person,
+          remainingCandidates,
+        )
+    }
+  }
+
+  private def initiatePerformance(action: Action[Commoner],
+                                  person: Commoner): Commoner = {
+    val performance = CommonerPerformance(of = action)
+    if (performance.isComplete) performance.of(person)
+    else person.copy(currentActivity = performance)
   }
 
   @tailrec
