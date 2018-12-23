@@ -1,7 +1,7 @@
 package person
 
 import actions._
-import configuration.Configuration
+import configuration.Configuration.DEBUG
 import demographic._
 import entity.Entity
 import inventory.FoodInventory
@@ -104,12 +104,17 @@ case class Commoner(name: String,
     // so it's safe to assume that in a given tick, a person will take at most one action
 
     currentActivity match {
-      case Incapacitated => this
+      case Incapacitated =>
+        if (DEBUG) println(s"${this.name} incapacit")
+        this
       case performance: CommonerPerformance =>
+        if (DEBUG) println(s"${this.name} still working on $performance, ticks remaining ${performance.ticksRemaining}")
         perform(performance, person = this)
       case Idle =>
         val action = selectAction(time, world, person = this, candidates = candidateActions)
         val performance = CommonerPerformance(perform = action)
+        if (DEBUG) println(s"${this.name} idle,  starting $action will take ${performance.ticksRemaining}")
+
         perform(performance, person = this)
     }
   }
@@ -117,7 +122,10 @@ case class Commoner(name: String,
   def perform(performance: CommonerPerformance, person: Commoner): Commoner = {
     val progressed = performance.progress
     val (nextPerson, nextActivity) =
-      if (progressed.isComplete) (progressed.perform(person = person), Idle)
+      if (progressed.isComplete) {
+        if (DEBUG) println(s"$performance complete")
+        (progressed.perform(person = person), Idle)
+      }
       else (person, progressed)
     nextPerson.copy(currentActivity = nextActivity)
   }
@@ -130,7 +138,7 @@ case class Commoner(name: String,
       case Nil => NoAction
       case (candidateAction, condition) :: remainingCandidates =>
         val shouldAct = condition(datetime, world, person)
-        if (Configuration.DEBUG && shouldAct) {
+        if (DEBUG && shouldAct) {
           val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
           println(msg)
         }

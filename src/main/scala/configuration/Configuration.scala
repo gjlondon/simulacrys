@@ -1,7 +1,7 @@
 package configuration
 
 object Configuration {
-  val MAX_TICKS = 100000
+  val MAX_TICKS = 10000
   val DEBUG = false
-  val PARALLEL = true
+  val PARALLEL = false
 }

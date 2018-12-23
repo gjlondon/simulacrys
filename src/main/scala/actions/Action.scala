@@ -1,5 +1,6 @@
 package actions
 
+import configuration.Configuration
 import meal.Meal
 import org.joda.time.DateTime
 import person.{ActionCandidates, Commoner, Person, TypicalTimes}
@@ -10,6 +11,12 @@ import status.Dead
 import world.World
 import constants.Constants.{CALORIES_PER_KILO_OF_FAT, TICK_DURATION}
 import squants.time.{Hours, Minutes, Seconds}
+
+object LocalConfig {
+  val DEBUG = true
+}
+
+import LocalConfig.DEBUG
 
 trait Action[T <: Commoner] {
   def ticksRequired: Int = {
@@ -48,9 +55,16 @@ object Metabolize extends Action[Commoner] {
   override def apply(person: Commoner): Commoner = {
     val fatBurned = person.caloriesRequired / CALORIES_PER_KILO_OF_FAT
 
+    val updatedBodyFat = person.availableBodyFat - fatBurned
+    val updatedHealth = if (updatedBodyFat <= Kilograms(0)) {
+      if (DEBUG) {
+        println(s"${person.name} died because body fat fell to $updatedBodyFat")
+      }
+      Dead
+    } else person.health
     person.copy (
-      availableBodyFat = person.availableBodyFat - fatBurned,
-      health = if (person.availableBodyFat <= Kilograms(0)) Dead else person.health
+      availableBodyFat = updatedBodyFat,
+      health = updatedHealth
     )
   }
 }
@@ -103,9 +117,15 @@ object Eat extends Action[Commoner] {
     )
 
     meal match {
-      case None => person
+      case None =>
+        if (DEBUG) {
+          println(s"No meal could be constructed from ${person.inventory}")
+        }
+        person
       case Some(eatenMeal) =>
         val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
+        if (DEBUG) println(s"Yum meal $eatenMeal new fat $fatGained")
+
         person.copy(
           inventory = person.inventory.deductMeal(eatenMeal),
           availableBodyFat = person.availableBodyFat + fatGained
