@@ -102,20 +102,24 @@ case class Commoner(name: String,
   def act(time: DateTime, world: World): Commoner =  {
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
+
     currentActivity match {
       case Incapacitated => this
       case performance: CommonerPerformance =>
-        progressPerformance(performance, person = this)
+        perform(performance, person = this)
       case Idle =>
         val action = selectAction(time, world, person = this, candidates = candidateActions)
-        initiatePerformance(action, person = this)
+        val performance = CommonerPerformance(perform = action)
+        perform(performance, person = this)
     }
   }
 
-  def progressPerformance(performance: CommonerPerformance, person: Commoner): Commoner = {
-    val progressed = performance.copy(ticksElapsed = performance.ticksElapsed + 1)
-    if (progressed.ticksRemaining == 0) progressed.of(person).copy(currentActivity = Idle)
-    else person.copy(currentActivity = progressed)
+  def perform(performance: CommonerPerformance, person: Commoner): Commoner = {
+    val progressed = performance.progress
+    val (nextPerson, nextActivity) =
+      if (progressed.isComplete) (progressed.perform(person = person), Idle)
+      else (person, progressed)
+    nextPerson.copy(currentActivity = nextActivity)
   }
 
   @tailrec
@@ -137,13 +141,6 @@ case class Commoner(name: String,
           remainingCandidates,
         )
     }
-  }
-
-  private def initiatePerformance(action: Action[Commoner],
-                                  person: Commoner): Commoner = {
-    val performance = CommonerPerformance(of = action)
-    if (performance.isComplete) performance.of(person)
-    else person.copy(currentActivity = performance)
   }
 }
 
