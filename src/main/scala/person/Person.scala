@@ -3,7 +3,9 @@ package person
 import actions.{Action, NoAction}
 import configuration.Configuration
 import demographic._
+import entity.Entity
 import inventory.FoodInventory
+import message.Message
 import org.joda.time.DateTime
 import resource.Calorie.calorie
 import squants.Time
@@ -42,7 +44,7 @@ package object healthCalculations {
 
 import person.healthCalculations.{calcBodyMassIndex, calcWeightStatus}
 
-sealed trait Person {
+sealed trait Person extends Entity {
   val name: String
   val inventory: FoodInventory
   val health: HealthStatus
@@ -90,7 +92,9 @@ case class Commoner(name: String,
                     leanBodyMass: Mass,
                     health: HealthStatus = Fine,
                     activityStatus: ActivityStatus = Idle,
-                    actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]])
+                    actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
+                    inbox: Queue[Message] = Queue.empty[Message],
+                    outbox: Queue[Message] = Queue.empty[Message])
   extends Person {
 
   import actions.CommonerActions.candidateActions
