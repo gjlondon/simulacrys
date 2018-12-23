@@ -145,30 +145,6 @@ case class Commoner(name: String,
     if (performance.isComplete) performance.of(person)
     else person.copy(currentActivity = performance)
   }
-
-  @tailrec
-  private def performNextAction(datetime: DateTime, world: World,
-                                person: Commoner, candidates: ActionCandidates,
-                                timeRemainingInTick: Time): Commoner = {
-    candidates match {
-      case Nil => person
-      case (candidateAction, condition) :: remainingCandidates =>
-        val shouldAct = condition(datetime, world, person)
-        if (Configuration.DEBUG && shouldAct) {
-          val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
-          println(msg)
-        }
-        val actionDuration = candidateAction.durationToComplete
-        val willAct = shouldAct && actionDuration <= timeRemainingInTick
-        val action = if (willAct) candidateAction else NoAction
-        performNextAction(
-          datetime, world,
-          action(person),
-          remainingCandidates,
-          timeRemainingInTick
-        )
-    }
-  }
 }
 
 
