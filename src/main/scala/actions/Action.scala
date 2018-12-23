@@ -19,10 +19,7 @@ trait Action[T <: Commoner] {
   val interruptable: Boolean
 }
 
-trait Performance[T <: Commoner] {
-  val of: Action[T]
-  val timeRemaining: Time
-}
+
 
 object NoAction extends Action[Commoner] {
 
