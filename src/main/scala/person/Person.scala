@@ -1,6 +1,6 @@
 package person
 
-import actions.NoAction
+import actions.{Action, NoAction}
 import configuration.Configuration
 import demographic._
 import inventory.FoodInventory
@@ -15,6 +15,7 @@ import status._
 import world.World
 
 import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 import scala.util.Random
 
 sealed trait WeightStatus
@@ -50,16 +51,12 @@ sealed trait Person {
   val height: Distance
   val leanBodyMass: Mass
   val availableBodyFat: Mass
+  val activityStatus: ActivityStatus
 
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
   def act(time: DateTime, world: World): Person
-// TODO figure out how to make these covariant so they can be defined on the trait
-  //  val eat: Commoner => Commoner
-//  val act: (Commoner, DateTime) => Commoner
-//  val metabolize: Commoner => Commoner
-//  val relax: Commoner => Commoner
 
   val caloriesRequired: Energy = {
     val required: Int = (age: AgeBracket, gender) match {
@@ -84,12 +81,26 @@ object TypicalTimes {
   val metabolismHour = 7
 }
 
-case class Commoner(name: String, inventory: FoodInventory,
-                    age: AgeBracket, gender: Gender, height: Distance,
-                    availableBodyFat: Mass, leanBodyMass: Mass,
-                    health: HealthStatus = Fine) extends Person {
+case class Commoner(name: String,
+                    inventory: FoodInventory,
+                    age: AgeBracket,
+                    gender: Gender,
+                    height: Distance,
+                    availableBodyFat: Mass,
+                    leanBodyMass: Mass,
+                    health: HealthStatus = Fine,
+                    activityStatus: ActivityStatus = Idle,
+                    actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]])
+  extends Person {
 
   import actions.CommonerActions.candidateActions
+
+  def receiveAction(action: Action[Commoner]): Commoner = {
+    this.activityStatus match {
+      case Busy | Incapacitated => this
+      case Idle => action(this).copy(activityStatus = Busy)
+    }
+  }
 
   def act(time: DateTime, world: World): Commoner =  {
     performNextAction(time, world, this, candidateActions, Hours(1))
@@ -103,8 +114,10 @@ case class Commoner(name: String, inventory: FoodInventory,
       case Nil => person
       case (candidateAction, condition) :: remainingCandidates =>
         val shouldAct = condition(datetime, world, person)
-        if (Configuration.DEBUG && shouldAct)
-          println(s"Person ${person.name} should perform ${candidateAction.name} at time $datetime")
+        if (Configuration.DEBUG && shouldAct) {
+          val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
+          println(msg)
+        }
         val actionDuration = candidateAction.durationToComplete
         val willAct = shouldAct && actionDuration <= timeRemainingInTick
         val action = if (willAct) candidateAction else NoAction
