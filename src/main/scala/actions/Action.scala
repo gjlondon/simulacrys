@@ -1,6 +1,6 @@
 package actions
 
-import constants.Constants.{CALORIES_PER_KILO_OF_FAT, TICK_DURATION}
+import constants.Constants.{ENERGY_PER_KILO_OF_FAT, TICK_DURATION}
 import inventory.FoodInventory
 import meal.Meal
 import org.joda.time.DateTime
@@ -53,7 +53,7 @@ object Metabolize extends Action[Commoner] {
   override val interruptable: Boolean = false
 
   override def apply(person: Commoner): Commoner = {
-    val fatBurned = person.foodEnergyRequired / CALORIES_PER_KILO_OF_FAT
+    val fatBurned = person.foodEnergyRequired / ENERGY_PER_KILO_OF_FAT
 
     val updatedBodyFat = person.availableBodyFat - fatBurned
     val updatedHealth = if (updatedBodyFat <= Kilograms(0)) {
@@ -125,7 +125,7 @@ object Eat extends Action[Commoner] {
   override def apply(person: Commoner): Commoner = {
     val meal = Meal.cheapestMeal(
       candidateComponents = person.inventory,
-      requiredCalories = person.foodEnergyRequired
+      requiredEnergy = person.foodEnergyRequired
     )
 
     meal match {
@@ -135,7 +135,7 @@ object Eat extends Action[Commoner] {
         }
         person
       case Some(eatenMeal) =>
-        val fatGained = eatenMeal.calories / CALORIES_PER_KILO_OF_FAT
+        val fatGained = eatenMeal.energy / ENERGY_PER_KILO_OF_FAT
         val newBodyFat = person.availableBodyFat + fatGained
         val newInventory = person.inventory.deductMeal(eatenMeal)
 
