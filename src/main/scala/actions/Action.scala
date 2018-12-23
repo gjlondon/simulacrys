@@ -8,10 +8,15 @@ import squants.Time
 import squants.mass.Kilograms
 import status.Dead
 import world.World
-import constants.Constants.CALORIES_PER_KILO_OF_FAT
-import squants.time.{Hours, Minutes}
+import constants.Constants.{CALORIES_PER_KILO_OF_FAT, TICK_DURATION}
+import squants.time.{Hours, Minutes, Seconds}
 
 trait Action[T <: Commoner] {
+  def ticksRequired: Int = {
+    val secondsInTick: Time = Seconds(TICK_DURATION.seconds)
+    Math.ceil(durationToComplete / secondsInTick).toInt
+  }
+
   val durationToComplete: Time
   def apply(person: T): T
   val name: String
