@@ -2,6 +2,7 @@ package clock
 
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration
+import constants.Constants.TICK_DURATION
 import location.Location
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
@@ -34,7 +35,7 @@ object Clock {
 
     printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
 
-    tick(tickNum + 1, maxTicks, newWorld, time = time + 1.hours)
+    tick(tickNum + 1, maxTicks, newWorld, time = time + TICK_DURATION)
   }
 
   def updateLocation(time: DateTime, world: World)(loc: Location): Location = {
