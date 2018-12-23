@@ -11,7 +11,7 @@ sealed trait Performance[T <: Commoner] extends CurrentActivity {
   val perform: Action[T]
   val ticksElapsed: Int
   def ticksRemaining: Int = perform.ticksRequired - ticksElapsed
-  def isComplete: Boolean = ticksRemaining == 0
+  def isComplete: Boolean = ticksRemaining <= 0
 
   def progress: Performance[T]
 }
