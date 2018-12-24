@@ -1,7 +1,9 @@
 package actions
 
 import constants.Constants.{ENERGY_PER_KILO_OF_FAT, TICK_DURATION}
+import facility.Farms
 import inventory.FoodInventory
+import location.Location
 import meal.Meal
 import org.joda.time.DateTime
 import person.{ActionCandidates, Commoner, TypicalTimes}
@@ -10,7 +12,6 @@ import squants.Time
 import squants.mass.Kilograms
 import squants.time.{Hours, Minutes, Seconds}
 import status._
-import world.World
 
 import scala.util.Random
 
@@ -217,35 +218,36 @@ object Sleep extends Action[Commoner] {
 
 object CommonerActions {
 
-  def shouldMetabolize(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldMetabolize(time: DateTime, location: Location, person: Commoner): Boolean = {
     (TypicalTimes.metabolismHour == time.getHourOfDay) && (TypicalTimes.metabolismMinute == time.getMinuteOfHour)
   }
 
-  def shouldEat(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldEat(time: DateTime, location: Location, person: Commoner): Boolean = {
     TypicalTimes.mealHours.contains(time.getHourOfDay)
   }
 
-  def shouldFarm(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldFarm(time: DateTime, location: Location, person: Commoner): Boolean = {
     val isLightOut = time.getHourOfDay >= 7 && time.getHourOfDay < 18
-    isLightOut && person.needsFood
+    val farmAvailable = location.hasAvailableFacility(Farms)
+    isLightOut && person.needsFood && farmAvailable
   }
 
-  def shouldRelax(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldRelax(time: DateTime, location: Location, person: Commoner): Boolean = {
     val isEvening = time.getHourOfDay >= 18 && time.getHourOfDay < 22
     isEvening
   }
 
-  def shouldSleep(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldSleep(time: DateTime, location: Location, person: Commoner): Boolean = {
     val isNight = time.getHourOfDay >= 22 || time.getHourOfDay < 6
     isNight
   }
 
-  def shouldProcreate(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldProcreate(time: DateTime, location: Location, person: Commoner): Boolean = {
     val isFunkyTime = time.getHourOfDay == 21
     isFunkyTime && !person.needsFood
   }
 
-  def shouldTransitionHealth(time: DateTime, world: World, person: Commoner): Boolean = {
+  def shouldTransitionHealth(time: DateTime, location: Location, person: Commoner): Boolean = {
     time.getHourOfDay == 3 && time.getMinuteOfHour == 0
   }
 

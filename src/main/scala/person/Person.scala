@@ -6,6 +6,7 @@ import configuration.Configuration.DEBUG
 import demographic._
 import entity.Entity
 import inventory.FoodInventory
+import location.Location
 import message.Message
 import org.joda.time.DateTime
 import resource.Calorie.calorie
@@ -71,7 +72,7 @@ sealed trait Person extends Entity {
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
-  def update(time: DateTime, world: World): Person
+  def update(time: DateTime, location: Location): Person
 
   val foodEnergyRequired: Energy = {
     val required: Int = (ageBracket: AgeBracket, gender) match {
@@ -114,48 +115,48 @@ case class Commoner(name: String,
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
 
-  def update(time: DateTime, world: World): Commoner =  {
+  def update(time: DateTime, location: Location): Commoner =  {
 
-    val afterReactions: Commoner = react(time, world)
+    val afterReactions: Commoner = react(time, location)
 
     // if person is not incapacitated, allow a voluntary action
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
-    val afterActions = act(time, world, afterReactions)
+    val afterActions = act(time, location, afterReactions)
 
     afterActions.copy(asOf = time)
   }
 
-  private def react(time: DateTime, world: World): Commoner = {
+  private def react(time: DateTime, location: Location): Commoner = {
     // resolve involuntary actions
     // TODO add a concept of thirst
 
-    performNextReaction(datetime = time, world = world,
+    performNextReaction(datetime = time, location = location,
       person = this, reactions = involuntaryActions)
   }
 
   @tailrec
-  private def performNextReaction(datetime: DateTime, world: World,
+  private def performNextReaction(datetime: DateTime, location: Location,
                                   person: Commoner,
                                   reactions: ActionCandidates): Commoner = {
     reactions match {
       case Nil => person
       case (possibleReaction, condition) :: remainingCandidates =>
-        val shouldReact = condition(datetime, world, person)
+        val shouldReact = condition(datetime, location, person)
         if (DEBUG && shouldReact) {
           val msg = s"Person ${person.name} should perform ${possibleReaction.name} at time $datetime"
           println(msg)
         }
         val action = if (shouldReact) possibleReaction else NoAction
         performNextReaction(
-          datetime, world,
+          datetime, location,
           action(person),
           remainingCandidates,
         )
     }
   }
 
-  def act(time: DateTime, world: World, person: Commoner): Commoner =  {
+  def act(time: DateTime, location: Location, person: Commoner): Commoner =  {
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
 
@@ -167,7 +168,7 @@ case class Commoner(name: String,
         if (DEBUG) println(s"${person.name} still working on $performance, ticks remaining ${performance.ticksRemaining}")
         perform(performance, person = person)
       case Idle =>
-        val action = selectAction(time, world, person = person, candidates = candidateActions)
+        val action = selectAction(time, location, person = person, candidates = candidateActions)
         val performance = CommonerPerformance(perform = action)
         if (DEBUG) println(s"${person.name} idle,  starting $action will take ${performance.ticksRemaining}")
 
@@ -187,20 +188,20 @@ case class Commoner(name: String,
   }
 
   @tailrec
-  private def selectAction(datetime: DateTime, world: World,
+  private def selectAction(datetime: DateTime, location: Location,
                            person: Commoner,
                            candidates: ActionCandidates): Action[Commoner] = {
     candidates match {
       case Nil => NoAction
       case (candidateAction, condition) :: remainingCandidates =>
-        val shouldAct = condition(datetime, world, person)
+        val shouldAct = condition(datetime, location, person)
         if (DEBUG && shouldAct) {
           val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
           println(msg)
         }
         if (shouldAct) candidateAction
         else selectAction(
-          datetime, world,
+          datetime, location,
           person,
           remainingCandidates,
         )

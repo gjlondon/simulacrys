@@ -39,7 +39,7 @@ object Clock {
   }
 
   def updateLocation(time: DateTime, world: World)(loc: Location): Location = {
-    val updatedPopulace = loc.populace map { p => p.update(time = time, world = world) }
+    val updatedPopulace = loc.populace map { p => p.update(time = time, location = loc) }
     loc.withNewPopulace(populace = updatedPopulace.living)
   }
 
