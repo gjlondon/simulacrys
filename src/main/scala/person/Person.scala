@@ -116,14 +116,14 @@ case class Commoner(name: String,
 
   def update(time: DateTime, world: World): Commoner =  {
 
-    val reacted: Commoner = react(time, world)
+    val afterReactions: Commoner = react(time, world)
 
     // if person is not incapacitated, allow a voluntary action
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
-    val acted = act(time, world, reacted)
+    val afterActions = act(time, world, afterReactions)
 
-    acted.copy(asOf = time)
+    afterActions.copy(asOf = time)
   }
 
   private def react(time: DateTime, world: World): Commoner = {

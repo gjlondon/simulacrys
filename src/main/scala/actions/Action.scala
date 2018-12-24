@@ -63,6 +63,9 @@ object Metabolize extends Reaction {
       }
       Dead
     } else person.health
+
+    if (updatedHealth == Dead) println(s"${person.name} died from starvation")
+
     person.copy (
       availableBodyFat = updatedBodyFat,
       health = updatedHealth
@@ -86,10 +89,13 @@ object TransitionHealth extends Reaction {
 
     val (worseChance, betterChance) = HealthStatus.transitionProbabilities(person.ageBracket)
 
+    val nextHealth = transitionHealth(worseChance = worseChance,
+      betterChance = betterChance,
+      starting = person.health)
+
+    if (nextHealth == Dead) println(s"${person.name} died in a health event")
     person.copy (
-      health = transitionHealth(worseChance = worseChance,
-        betterChance = betterChance,
-        starting = person.health)
+      health = nextHealth
     )
   }
 }
