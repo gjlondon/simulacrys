@@ -1,14 +1,16 @@
 package location
 
 import populace.Populace
-import status.Dead
 
 import scala.util.Random
+
 
 sealed trait Location {
   def overview: String = {
     s"Location $name has a living populace of size ${this.livingPopSize}"
   }
+
+  val facilities: Facilities
 
   val name: String
   val populace: Populace
@@ -17,13 +19,25 @@ sealed trait Location {
   def withNewPopulace(populace: Populace): Location  // TODO maybe replace with a lens?
 }
 
-case class City(name: String, populace: Populace) extends Location {
+case class City(name: String,
+                populace: Populace,
+                facilities: Facilities) extends Location {
   override def withNewPopulace(populace: Populace): Location = {
     this.copy(populace = populace)
   }
 }
 
-case class Farm(name: String, populace: Populace) extends Location {
+case class Manor(name: String,
+                 populace: Populace,
+                 facilities: Facilities) extends Location {
+  override def withNewPopulace(populace: Populace): Location = {
+    this.copy(populace = populace)
+  }
+}
+
+case class Farm(name: String,
+                populace: Populace,
+                facilities: Facilities) extends Location {
   override def withNewPopulace(populace: Populace): Location = {
     this.copy(populace = populace)
   }

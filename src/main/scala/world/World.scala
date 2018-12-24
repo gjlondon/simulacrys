@@ -1,10 +1,11 @@
 package world
 
-import location.{City, Farm, Location, LocationNames}
+import location._
 import populace.Populace
 
 import scala.util.Random
 import convenienceTypes.ConvenienceTypes.VectorGrid
+import facility.Facility
 import org.joda.time.DateTime
 
 class World private (startingGrid: Grid) {
@@ -43,8 +44,9 @@ object World {
 
   def fromGrid(grid: Grid): World = new World(startingGrid = grid)
   def fromLocations(locations: VectorGrid): World = new World(Grid(locations))
-  def randomWorld(startingTime: DateTime): World = if (Random.nextInt(1) == 1)
-    World.farmWorld(startingTime) else World.cityWorld(startingTime)
+  def randomWorld(startingTime: DateTime): World = {
+    new World(Grid.randomGrid(startingTime))
+  }
 }
 
 class Grid private (val positions: VectorGrid)
@@ -65,6 +67,20 @@ object Grid {
     new Grid(positions = positions)
   }
 
+  def randomGrid(startingTime: DateTime,
+                 size: Int = 100): Grid = {
+    val positions = (0 to size).map { _ =>
+      val locTypes = Array(Farm, Manor, City)
+
+      val kls = Random.shuffle(locTypes.toList).head
+      val randomPop = Populace.randomPop(15, startingTime)
+      val facilities = Map[Facility, List[Facility]]()
+      kls("here", randomPop, facilities)
+    }.toVector
+
+    Grid(positions)
+  }
+
   def fillGrid[T <: Location](withElem: => T, size: Int = 10): Grid = {
     val positions: VectorGrid = Vector.fill[T](size * size)(withElem)
     Grid(positions)
@@ -73,14 +89,26 @@ object Grid {
   def allFarms(startingTime: DateTime): Grid = {
     fillGrid {
       val farmName = LocationNames.nextName
-      Farm(farmName, Populace.randomPop(15, startingTime))
+      val facilities = Map[Facility, List[Facility]]()
+
+      Farm(
+        farmName,
+        Populace.randomPop(15, startingTime),
+        facilities
+      )
     }
   }
 
   def allCities(startingTime: DateTime): Grid = {
     fillGrid {
       val cityName = LocationNames.nextName
-      City(cityName, Populace.randomPop(25, startingTime))
+      val facilities = Map[Facility, List[Facility]]()
+
+      City(
+        cityName,
+        Populace.randomPop(25, startingTime),
+        facilities
+      )
     }
   }
 }
