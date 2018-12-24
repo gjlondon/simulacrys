@@ -9,7 +9,7 @@ import facility.Facility
 import inventory.FoodInventory
 import location.Location
 import message.MailboxTypes.{Inbox, Outbox}
-import message.{Mailbox, Message}
+import message._
 import org.joda.time.DateTime
 import resource.Calorie.calorie
 import resource.{Beans, FoodItemGroup, Meat, SimpleFood}
@@ -18,7 +18,6 @@ import squants.mass._
 import squants.motion.Distance
 import squants.space.Centimeters
 import status._
-import world.World
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
@@ -117,8 +116,89 @@ case class Commoner(name: String,
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
 
-  def update(time: DateTime, location: Location): Commoner =  {
+  def handleMessage(message: Message[Entity, Entity, Entity], person: Commoner): Commoner = {
+    val payload = message.payload
+    if (payload.preconditionMet(person)) {
+      val effectedPerson = payload.effect(person)
+      payload.onSuccess match {
+        case c: Commoner => c
+      }
+    }
+    else payload.onFailure match {
+      case c: Commoner => c
+    }
+  }
 
+  def handleRequest(request: Request[AnyRef, Commoner],
+                    person: Commoner): (Commoner, Reply[Commoner, AnyRef]) = {
+//    println("request")
+    val (updated, succeeded) = if (request.condition(person)) {
+      (request.effect(person), true)
+    }
+
+    else (person, false)
+    val reply = Reply(from = updated, to = request.from, succeeded=true,
+      onFailure = (a: AnyRef) => a, onSuccess = (a: AnyRef) => a)
+    (updated, reply)
+  }
+
+  def handleReply(reply: Reply[AnyRef, Commoner], person: Commoner): Commoner = {
+//    println("reply")
+
+    if (reply.succeeded) {
+      reply.onSuccess(person)
+    }
+    else reply.onFailure(person)
+  }
+
+  def update(time: DateTime, location: Location): Commoner =  {
+    val noOpRequest = message.Request[Commoner, Commoner](
+      from = this, to = this, condition = _ => true, effect = c => c,
+      onSuccess = {
+        case c: Commoner => Some(c)
+        case _ => None
+      },
+      onFailure = {
+        case c: Commoner => Some(c)
+        case _ => None
+      }
+    )
+    val noOpReply = message.Reply[Commoner, Commoner](
+      from = this, to = this, succeeded = true,
+      onSuccess = (c: Commoner) => c, onFailure = (c: Commoner) => c
+    )
+    val inbox = Queue[ReqRep](noOpRequest, noOpReply)
+
+    val (nextReq, nextInbox) = inbox.dequeue
+    val postHandle = nextReq match {
+      case rep if classOf[Reply[AnyRef, Commoner]].isInstance(rep) =>
+        handleReply(rep.asInstanceOf[Reply[AnyRef, Commoner]], this)
+      case req if classOf[Request[AnyRef, Commoner]].isInstance(req) =>
+        handleRequest(req.asInstanceOf[Request[AnyRef, Commoner]], this)
+      case _ => (this, None)
+    }
+
+    val (nextReq2, next2Inbox) = nextInbox.dequeue
+    val postHandle2 = nextReq2 match {
+      case rep if classOf[Reply[AnyRef, Commoner]].isInstance(rep) =>
+        handleReply(rep.asInstanceOf[Reply[AnyRef, Commoner]], this)
+      case req if classOf[Request[AnyRef, Commoner]].isInstance(req) =>
+        handleRequest(req.asInstanceOf[Request[AnyRef, Commoner]], this)
+      case _ => (this, None)
+    }
+
+    val interaction = NoOpInteraction(onSuccess = this, onFailure = this)
+    val noOpMessage = PersonNoOp(from = this, to = this, payload = interaction)
+//    handleMessage(noOpMessage, this)
+    // 1. process all messages in inbox, updating state as necessary
+
+    // 2. if appropriate, create some messages to send to entities with whom
+    // you want to interact. These entities may include yourself, who e.g might
+    // complete some action on the next tick that has been started this tick
+
+    // 3. create a set of outgoing replies that respond to any income messages
+    // (to allow senders to react to success or failure), or that initiate an
+    // interaction with another entity
     val afterReactions: Commoner = react(time, location)
 
     // if person is not incapacitated, allow a voluntary action

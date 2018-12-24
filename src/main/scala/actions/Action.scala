@@ -51,6 +51,12 @@ sealed trait Interaction[+T, -U, +V] {
   val name: String
 }
 
+case class NoOpInteraction(onSuccess: Commoner, onFailure: Commoner) extends Interaction[Commoner, Commoner, Commoner] {
+  override val preconditionMet: Commoner => Boolean = _ => true
+  override val effect: Commoner => Commoner = { c: Commoner => c }
+  override val name: String = "No Op on Person"
+}
+
 case class Till(person: Commoner) extends Interaction[Commoner, Facility, Facility] {
   override val preconditionMet: Facility => Boolean = {
     f => f.isAvailable }
