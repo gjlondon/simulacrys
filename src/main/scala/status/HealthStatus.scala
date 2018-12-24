@@ -1,5 +1,7 @@
 package status
 
+import demographic._
+
 sealed trait HealthStatus {
   val nextWorst: HealthStatus = {
     this match {
@@ -19,6 +21,18 @@ sealed trait HealthStatus {
       case Sick => Poor
       case Dead => Dead
     }
+  }
+}
+
+object HealthStatus {
+  def transitionProbabilities(ageBracket: AgeBracket): (Double, Double) = {
+    val (worse, better) = ageBracket match {
+      case Child => (.03, .10)
+      case Young => (.01, .07)
+      case Adult => (.03, .03)
+      case Old => (.15, .01)
+    }
+    (worse, better)
   }
 }
 

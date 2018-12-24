@@ -9,8 +9,10 @@ import resource.{FoodItemGroup, Fresh, Freshness, SimpleFood}
 import squants.Time
 import squants.mass.Kilograms
 import squants.time.{Hours, Minutes, Seconds}
-import status.Dead
+import status._
 import world.World
+
+import scala.util.Random
 
 object LocalConfig {
   val DEBUG = false
@@ -64,6 +66,30 @@ object Metabolize extends Reaction {
     person.copy (
       availableBodyFat = updatedBodyFat,
       health = updatedHealth
+    )
+  }
+}
+
+object TransitionHealth extends Reaction {
+
+  override val name: String = "Update Health"
+
+  def transitionHealth(worseChance: Double, betterChance: Double,
+                       starting: HealthStatus): HealthStatus = {
+    val roll = Random.nextDouble()
+    if (roll <= worseChance) starting.nextWorst
+    else if (roll >= betterChance) starting.nextBest
+    else starting
+  }
+
+  override def apply(person: Commoner): Commoner = {
+
+    val (worseChance, betterChance) = HealthStatus.transitionProbabilities(person.ageBracket)
+
+    person.copy (
+      health = transitionHealth(worseChance = worseChance,
+        betterChance = betterChance,
+        starting = person.health)
     )
   }
 }
@@ -213,6 +239,10 @@ object CommonerActions {
     isFunkyTime && !person.needsFood
   }
 
+  def shouldTransitionHealth(time: DateTime, world: World, person: Commoner): Boolean = {
+    time.getHourOfDay == 3 && time.getMinuteOfHour == 0
+  }
+
   val relax: Commoner => Commoner = { c: Commoner => c }
   // TODO handle procreation
   val procreate: Commoner => Commoner = { c: Commoner => c }
@@ -233,5 +263,6 @@ object CommonerActions {
 
   val involuntaryActions: ActionCandidates = List(
     (Metabolize, shouldMetabolize),
+    (TransitionHealth, shouldTransitionHealth)
   )
 }

@@ -1,6 +1,7 @@
 package person
 
 import actions._
+import com.github.nscala_time.time.Imports._
 import configuration.Configuration.DEBUG
 import demographic._
 import entity.Entity
@@ -8,9 +9,11 @@ import inventory.FoodInventory
 import message.Message
 import org.joda.time.DateTime
 import resource.Calorie.calorie
+import resource.{Beans, FoodItemGroup, Meat, SimpleFood}
 import squants.energy.Energy
 import squants.mass._
 import squants.motion.Distance
+import squants.space.Centimeters
 import status._
 import world.World
 
@@ -46,11 +49,24 @@ sealed trait Person extends Entity {
   val name: String
   val inventory: FoodInventory
   val health: HealthStatus
-  val age: AgeBracket
+  val birthDate: DateTime
+  val asOf: DateTime
   val gender: Gender
   val height: Distance
   val leanBodyMass: Mass
   val availableBodyFat: Mass
+
+  val age: Int = (birthDate to asOf).toPeriod.getYears
+
+  val ageBracket: AgeBracket = {
+
+    age match {
+      case x if x < 13 => Child
+      case x if x < 18 => Young
+      case x if x < 60 => Adult
+      case _ => Old
+    }
+  }
 
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
@@ -58,7 +74,7 @@ sealed trait Person extends Entity {
   def update(time: DateTime, world: World): Person
 
   val foodEnergyRequired: Energy = {
-    val required: Int = (age: AgeBracket, gender) match {
+    val required: Int = (ageBracket: AgeBracket, gender) match {
       case (Child, Female) => 1500
       case (Child, Male) => 1600
       case (Young, Female) => 1700
@@ -83,11 +99,12 @@ object TypicalTimes {
 
 case class Commoner(name: String,
                     inventory: FoodInventory,
-                    age: AgeBracket,
                     gender: Gender,
                     height: Distance,
                     availableBodyFat: Mass,
                     leanBodyMass: Mass,
+                    asOf: DateTime,
+                    birthDate: DateTime,
                     health: HealthStatus = Fine,
                     currentActivity: CurrentActivity = Idle,
                     actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
@@ -104,7 +121,9 @@ case class Commoner(name: String,
     // if person is not incapacitated, allow a voluntary action
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
-    act(time, world, reacted)
+    val acted = act(time, world, reacted)
+
+    acted.copy(asOf = time)
   }
 
   private def react(time: DateTime, world: World): Commoner = {
@@ -189,7 +208,30 @@ case class Commoner(name: String,
   }
 }
 
+object Commoner {
+  def randomCommoner(asOf: DateTime): Commoner = {
+    val startingInventory = FoodInventory(
+      contents = Map[SimpleFood, FoodItemGroup](
+        Beans -> FoodItemGroup.randomAmountOf(Beans),
+        Meat -> FoodItemGroup.randomAmountOf(Meat)))
+    val startingHeight: Distance = Centimeters(Random.nextGaussian() * 75) + Centimeters(165) // guessing average heights
+    val startingLeanMass: Mass = Kilograms(Random.nextGaussian() * 15) + Kilograms(50) // guessing average weights
+    val startingFat: Mass = Kilograms(Random.nextGaussian() * 3) + Kilograms(10) // guessing average weights
+    val startingAge = Random.nextInt(90)
+    val birthDate = asOf - startingAge.years
 
+    Commoner(
+      name = PersonNames.nextName,
+      inventory = startingInventory,
+      asOf = asOf,
+      birthDate = birthDate,
+      gender = Male,
+      availableBodyFat = startingFat,
+      leanBodyMass = startingLeanMass,
+      height = startingHeight
+    )
+  }
+}
 
 object PersonNames {
   def nextName: String = names(Random.nextInt(names.length))

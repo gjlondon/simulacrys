@@ -4,10 +4,8 @@ import location.{City, Farm, Location, LocationNames}
 import populace.Populace
 
 import scala.util.Random
-
-
-
 import convenienceTypes.ConvenienceTypes.VectorGrid
+import org.joda.time.DateTime
 
 class World private (startingGrid: Grid) {
   val grid: Grid = startingGrid
@@ -36,11 +34,17 @@ class World private (startingGrid: Grid) {
 }
 
 object World {
-  def farmWorld: World = new World(startingGrid = Grid.allFarms)
-  def cityWorld: World = new World(startingGrid = Grid.allCities)
+  def farmWorld(startingTime: DateTime): World = new World(
+    startingGrid = Grid.allFarms(startingTime)
+  )
+  def cityWorld(startingTime: DateTime): World = new World(
+    startingGrid = Grid.allCities(startingTime)
+  )
+
   def fromGrid(grid: Grid): World = new World(startingGrid = grid)
   def fromLocations(locations: VectorGrid): World = new World(Grid(locations))
-  def randomWorld: World = if (Random.nextInt(1) == 1) World.farmWorld else World.cityWorld
+  def randomWorld(startingTime: DateTime): World = if (Random.nextInt(1) == 1)
+    World.farmWorld(startingTime) else World.cityWorld(startingTime)
 }
 
 class Grid private (val positions: VectorGrid)
@@ -66,17 +70,17 @@ object Grid {
     Grid(positions)
   }
 
-  def allFarms: Grid = {
+  def allFarms(startingTime: DateTime): Grid = {
     fillGrid {
       val farmName = LocationNames.nextName
-      Farm(farmName, Populace.randomPop(15))
+      Farm(farmName, Populace.randomPop(15, startingTime))
     }
   }
 
-  def allCities: Grid = {
+  def allCities(startingTime: DateTime): Grid = {
     fillGrid {
       val cityName = LocationNames.nextName
-      City(cityName, Populace.randomPop(25))
+      City(cityName, Populace.randomPop(25, startingTime))
     }
   }
 }

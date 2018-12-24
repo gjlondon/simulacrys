@@ -1,12 +1,7 @@
 package populace
 
-import demographic.{Adult, Female, Male}
-import inventory.FoodInventory
-import person.{Commoner, Person, PersonNames}
-import resource._
-import squants.mass.{Kilograms, Mass}
-import squants.motion.Distance
-import squants.space.{Centimeters, Meters}
+import org.joda.time.DateTime
+import person.{Commoner, Person}
 import status.Dead
 
 import scala.collection.generic.CanBuildFrom
@@ -49,51 +44,35 @@ object Populace {
     def apply(): mutable.Builder[A, Populace] = newBuilder
   }
 
-  def randomPop(ofSize: Int): Populace = {
+  def randomPop(ofSize: Int, startingTime: DateTime): Populace = {
     val popSize = Random.nextInt(10)
     val randomPeople = (0 to popSize) map { idx =>
-      val startingInventory = FoodInventory(
-        contents = Map[SimpleFood, FoodItemGroup](
-          Beans -> FoodItemGroup.randomAmountOf(Beans),
-          Meat -> FoodItemGroup.randomAmountOf(Meat)))
-      val startingHeight: Distance = Centimeters(Random.nextGaussian() * 75) + Centimeters(165) // guessing average heights
-    val startingLeanMass: Mass = Kilograms(Random.nextGaussian() * 15) + Kilograms(50) // guessing average weights
-    val startingFat: Mass = Kilograms(Random.nextGaussian() * 3) + Kilograms(10) // guessing average weights
-
-      Commoner(
-        name = PersonNames.nextName,
-        inventory = startingInventory,
-        age = Adult,
-        gender = Male,
-        availableBodyFat = startingFat,
-        leanBodyMass = startingLeanMass,
-        height = startingHeight
-      )
+      Commoner.randomCommoner(asOf = startingTime)
     }
 
     Populace(randomPeople: _*)
   }
 
-  def examplePop: Populace = {
-    val bob = Commoner("Bob", FoodInventory(contents = Map[SimpleFood, FoodItemGroup](
-      Beans -> FoodItemGroup.randomAmountOf(Beans),
-      Meat -> FoodItemGroup.randomAmountOf(Meat, max=30))),
-      age = Adult, gender = Male, availableBodyFat = Kilograms(30),
-      leanBodyMass = Kilograms(10),
-      height = Meters(1))
-    val carl = Commoner("Carl", FoodInventory(contents = Map[SimpleFood, FoodItemGroup](
-      Beans -> FoodItemGroup.randomAmountOf(Beans, max=30),
-      Meat -> FoodItemGroup.randomAmountOf(Meat))),
-      age = Adult, gender = Male, availableBodyFat = Kilograms(30),
-      leanBodyMass = Kilograms(10),
-      height = Meters(1))
-    val alice = Commoner("Alice", FoodInventory(contents = Map[SimpleFood, FoodItemGroup](
-      Beans -> FoodItemGroup.randomAmountOf(Beans),
-      Meat -> FoodItemGroup.randomAmountOf(Meat))),
-      age = Adult, gender = Female, availableBodyFat = Kilograms(30),
-      leanBodyMass = Kilograms(10),
-      height = Meters(1))
-
-    Populace(alice, bob, carl)
-  }
+//  def examplePop: Populace = {
+//    val bob = Commoner("Bob", FoodInventory(contents = Map[SimpleFood, FoodItemGroup](
+//      Beans -> FoodItemGroup.randomAmountOf(Beans),
+//      Meat -> FoodItemGroup.randomAmountOf(Meat, max=30))),
+//      age = Adult, gender = Male, availableBodyFat = Kilograms(30),
+//      leanBodyMass = Kilograms(10),
+//      height = Meters(1))
+//    val carl = Commoner("Carl", FoodInventory(contents = Map[SimpleFood, FoodItemGroup](
+//      Beans -> FoodItemGroup.randomAmountOf(Beans, max=30),
+//      Meat -> FoodItemGroup.randomAmountOf(Meat))),
+//      age = Adult, gender = Male, availableBodyFat = Kilograms(30),
+//      leanBodyMass = Kilograms(10),
+//      height = Meters(1))
+//    val alice = Commoner("Alice", FoodInventory(contents = Map[SimpleFood, FoodItemGroup](
+//      Beans -> FoodItemGroup.randomAmountOf(Beans),
+//      Meat -> FoodItemGroup.randomAmountOf(Meat))),
+//      age = Adult, gender = Female, availableBodyFat = Kilograms(30),
+//      leanBodyMass = Kilograms(10),
+//      height = Meters(1))
+//
+//    Populace(alice, bob, carl)
+//  }
 }
