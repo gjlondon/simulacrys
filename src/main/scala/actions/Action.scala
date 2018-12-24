@@ -23,7 +23,7 @@ trait Volition
 case object Voluntary extends Volition
 case object Involuntary extends Volition
 
-trait Action[T <: Commoner] {
+sealed trait Action[T <: Commoner] {
   def ticksRequired: Int = {
     val secondsInTick: Time = Seconds(TICK_DURATION.seconds)
     Math.ceil(durationToComplete / secondsInTick).toInt
@@ -35,32 +35,21 @@ trait Action[T <: Commoner] {
   val exclusive: Boolean
   val interruptable: Boolean
   val volition: Volition
+  val instant: Boolean = durationToComplete == Minutes(0)
 }
 
-
-
-object NoAction extends Action[Commoner] {
-
+sealed trait Reaction extends Action[Commoner] {
+  override val instant: Boolean = true
   override val durationToComplete: Time = Minutes(0)
-  override val name: String = "No Action"
-  override val exclusive: Boolean = false
-  override val interruptable: Boolean = false
-
-  override def apply(person: Commoner): Commoner = {
-    person
-  }
-
-  override val volition: Volition = Voluntary
-}
-
-object Metabolize extends Action[Commoner] {
-
-  override val durationToComplete: Time = Minutes(1)
-  override val name: String = "Metabolize"
-  override val exclusive: Boolean = false
+  override val exclusive: Boolean = true
   override val interruptable: Boolean = false
   override val volition: Volition = Involuntary
 
+}
+
+object Metabolize extends Reaction {
+
+  override val name: String = "Metabolize"
 
   override def apply(person: Commoner): Commoner = {
     val fatBurned = person.foodEnergyRequired / ENERGY_PER_KILO_OF_FAT
@@ -78,6 +67,22 @@ object Metabolize extends Action[Commoner] {
     )
   }
 }
+
+
+object NoAction extends Action[Commoner] {
+
+  override val durationToComplete: Time = Minutes(0)
+  override val name: String = "No Action"
+  override val exclusive: Boolean = false
+  override val interruptable: Boolean = false
+
+  override def apply(person: Commoner): Commoner = {
+    person
+  }
+
+  override val volition: Volition = Voluntary
+}
+
 
 object Farm extends Action[Commoner] {
   override val volition: Volition = Voluntary
@@ -218,11 +223,15 @@ object CommonerActions {
   val unit: Commoner => Commoner = { c: Commoner => c }
 
   val candidateActions: ActionCandidates = List(
-    (Metabolize, shouldMetabolize),
+
     (Eat, shouldEat),
     (Farm, shouldFarm),
 //    ("relax", relax, shouldRelax),
 //    ("procreate", procreate, shouldProcreate),
     (Sleep, shouldSleep)
+  )
+
+  val involuntaryActions: ActionCandidates = List(
+    (Metabolize, shouldMetabolize),
   )
 }
