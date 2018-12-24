@@ -41,6 +41,24 @@ sealed trait Action[T <: Commoner] {
   val instant: Boolean = durationToComplete == Minutes(0)
 }
 
+sealed trait Interaction[T, U] {
+  val preconditionMet: U => Boolean
+  val effect: U => U
+  val onSuccess:T
+  val onFailure: T
+  val name: String
+}
+
+case class Till(person: Commoner) extends Interaction[Commoner, facility.Farm] {
+  override val preconditionMet: facility.Farm => Boolean = {
+    f: facility.Farm => f.isAvailable }
+  override val effect: facility.Farm => facility.Farm = {
+    f: facility.Farm => f.reserve }
+  override val onSuccess: Commoner = { actions.Farm(person) }
+  override val onFailure: Commoner = { person }
+  override val name: String = "Till the land"
+}
+
 sealed trait Reaction extends Action[Commoner] {
   override val instant: Boolean = true
   override val durationToComplete: Time = Minutes(0)
