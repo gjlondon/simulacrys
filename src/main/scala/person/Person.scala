@@ -97,7 +97,6 @@ case class Commoner(name: String,
                     outbox: Queue[Message] = Queue.empty[Message]
                    )
   extends Person {
-
   import actions.CommonerActions.candidateActions
 
   def act(time: DateTime, world: World): Commoner =  {

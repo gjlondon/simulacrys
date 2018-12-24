@@ -13,10 +13,15 @@ import status.Dead
 import world.World
 
 object LocalConfig {
-  val DEBUG = true
+  val DEBUG = false
 }
 
 import actions.LocalConfig.DEBUG
+
+trait Volition
+
+case object Voluntary extends Volition
+case object Involuntary extends Volition
 
 trait Action[T <: Commoner] {
   def ticksRequired: Int = {
@@ -29,6 +34,7 @@ trait Action[T <: Commoner] {
   val name: String
   val exclusive: Boolean
   val interruptable: Boolean
+  val volition: Volition
 }
 
 
@@ -43,6 +49,8 @@ object NoAction extends Action[Commoner] {
   override def apply(person: Commoner): Commoner = {
     person
   }
+
+  override val volition: Volition = Voluntary
 }
 
 object Metabolize extends Action[Commoner] {
@@ -51,6 +59,8 @@ object Metabolize extends Action[Commoner] {
   override val name: String = "Metabolize"
   override val exclusive: Boolean = false
   override val interruptable: Boolean = false
+  override val volition: Volition = Involuntary
+
 
   override def apply(person: Commoner): Commoner = {
     val fatBurned = person.foodEnergyRequired / ENERGY_PER_KILO_OF_FAT
@@ -70,6 +80,7 @@ object Metabolize extends Action[Commoner] {
 }
 
 object Farm extends Action[Commoner] {
+  override val volition: Volition = Voluntary
   override val durationToComplete: Time = Hours(2)
 
   override def apply(person: Commoner): Commoner = {
@@ -119,7 +130,7 @@ object Farm extends Action[Commoner] {
 }
 
 object Eat extends Action[Commoner] {
-  val DEBUG = true
+  override val volition: Volition = Voluntary
   override val durationToComplete: Time = Minutes(30)
 
   override def apply(person: Commoner): Commoner = {
