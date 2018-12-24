@@ -3,11 +3,29 @@ package facility
 sealed trait Facility {
   val name: String = this.getClass.getSimpleName
   val capacity: Int
+
+  def reserve: Facility
+  def release: Facility
+  val isAvailable: Boolean = capacity >= 1
 }
 
-case class Pasture(capacity: Int = 3) extends Facility
-case class Farm(capacity: Int = 2) extends Facility
-case class Forest(capacity: Int = 1) extends Facility
+case class Pasture(capacity: Int = 3) extends Facility {
+  override def reserve: Pasture = this.copy(capacity = capacity - 1)
+
+  override def release: Pasture = this.copy(capacity = capacity + 1)
+}
+
+case class Farm(capacity: Int = 2) extends Facility {
+  override def reserve: Farm = this.copy(capacity = capacity - 1)
+
+  override def release: Farm = this.copy(capacity = capacity + 1)
+}
+
+case class Forest(capacity: Int = 1) extends Facility {
+  override def reserve: Forest = this.copy(capacity = capacity - 1)
+
+  override def release: Forest = this.copy(capacity = capacity + 1)
+}
 
 sealed trait FacilityGroup
 
