@@ -13,6 +13,27 @@ sealed trait Location {
   }
 
   val facilities: Facilities
+
+  def hasAvailableFacility(facilityGroup: FacilityGroup): Boolean = {
+    facilities.get(facilityGroup) match {
+      case None => false
+      case Some(matchingFacilities) => matchingFacilities.find(f => f.isAvailable ) match {
+        case None => false
+        case Some(_) => true
+      }
+    }
+  }
+
+  def findAvailableFacility(facilityGroup: FacilityGroup): Option[Facility] = {
+    facilities.get(facilityGroup) match {
+      case None => None
+      case Some(matchingFacilities) => matchingFacilities.find(f => f.isAvailable ) match {
+        case None => None
+        case Some(facility) => Some(facility)
+      }
+    }
+  }
+
   val name: String
   val populace: Populace
   def livingPopulace: Populace = populace.living
