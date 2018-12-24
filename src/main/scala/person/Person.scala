@@ -8,7 +8,8 @@ import entity.Entity
 import facility.Facility
 import inventory.FoodInventory
 import location.Location
-import message.Message
+import message.MailboxTypes.{Inbox, Outbox}
+import message.{Mailbox, Message}
 import org.joda.time.DateTime
 import resource.Calorie.calorie
 import resource.{Beans, FoodItemGroup, Meat, SimpleFood}
@@ -110,8 +111,8 @@ case class Commoner(name: String,
                     health: HealthStatus = Fine,
                     currentActivity: CurrentActivity = Idle,
                     actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
-                    inbox: Queue[Message[Entity, Commoner, Commoner]] = Queue.empty[Message[Entity, Commoner, Commoner]],
-                    outbox: Queue[Message[Commoner, Entity, Entity]] = Queue.empty[Message[Commoner, Entity, Entity]]
+                    inbox: Inbox = Mailbox.empty,
+                    outbox: Outbox = Mailbox.empty,
                    )
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
