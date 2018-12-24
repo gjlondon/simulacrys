@@ -12,6 +12,6 @@ trait Entity {
     * process and respond to before taking an "voluntary" actions
     */
 
-  val inbox: Queue[Message]
-  val outbox: Queue[Message]
+  val inbox: Queue[Message[Entity, Entity, Entity]]
+  val outbox: Queue[Message[Entity, Entity, Entity]]
 }

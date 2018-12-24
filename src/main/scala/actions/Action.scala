@@ -1,12 +1,14 @@
 package actions
 
 import constants.Constants.{ENERGY_PER_KILO_OF_FAT, TICK_DURATION}
-import facility.Farms
+import entity.Entity
+import facility.{Facility, Farms}
 import inventory.FoodInventory
 import location.Location
 import meal.Meal
+import message.PersonToFacilityMessage
 import org.joda.time.DateTime
-import person.{ActionCandidates, Commoner, TypicalTimes}
+import person.{ActionCandidates, Commoner, ReactionCandidates, TypicalTimes}
 import resource.{FoodItemGroup, Fresh, Freshness, SimpleFood}
 import squants.Time
 import squants.mass.Kilograms
@@ -41,19 +43,19 @@ sealed trait Action[T <: Commoner] {
   val instant: Boolean = durationToComplete == Minutes(0)
 }
 
-sealed trait Interaction[T, U] {
+sealed trait Interaction[+T, -U, +V] {
   val preconditionMet: U => Boolean
-  val effect: U => U
+  val effect: U => V
   val onSuccess:T
   val onFailure: T
   val name: String
 }
 
-case class Till(person: Commoner) extends Interaction[Commoner, facility.Farm] {
-  override val preconditionMet: facility.Farm => Boolean = {
-    f: facility.Farm => f.isAvailable }
-  override val effect: facility.Farm => facility.Farm = {
-    f: facility.Farm => f.reserve }
+case class Till(person: Commoner) extends Interaction[Commoner, Facility, Facility] {
+  override val preconditionMet: Facility => Boolean = {
+    f => f.isAvailable }
+  override val effect: Facility => Facility = {
+    f => f.reserve }
   override val onSuccess: Commoner = { actions.Farm(person) }
   override val onFailure: Commoner = { person }
   override val name: String = "Till the land"
@@ -278,16 +280,29 @@ object CommonerActions {
   }
   val unit: Commoner => Commoner = { c: Commoner => c }
 
+  def farmInteraction(person: Commoner,
+                      location: Location,
+                      ): Option[PersonToFacilityMessage] = {
+    val interaction = Till(person)
+    val targetFarm = location.findAvailableFacility(Farms)
+    targetFarm match {
+      case None => None
+      case Some(farm) => Some(PersonToFacilityMessage(from = person, to = farm,
+        payload = interaction))
+    }
+
+  }
+
   val candidateActions: ActionCandidates = List(
 
-    (Eat, shouldEat),
-    (Farm, shouldFarm),
+    (Eat, shouldEat, None),
+    (Farm, shouldFarm, Some(farmInteraction)),
 //    ("relax", relax, shouldRelax),
 //    ("procreate", procreate, shouldProcreate),
-    (Sleep, shouldSleep)
+    (Sleep, shouldSleep, None)
   )
 
-  val involuntaryActions: ActionCandidates = List(
+  val involuntaryActions: ReactionCandidates = List(
     (Metabolize, shouldMetabolize),
     (TransitionHealth, shouldTransitionHealth)
   )

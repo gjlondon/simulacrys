@@ -5,6 +5,7 @@ import com.github.nscala_time.time.Imports._
 import configuration.Configuration.DEBUG
 import demographic._
 import entity.Entity
+import facility.Facility
 import inventory.FoodInventory
 import location.Location
 import message.Message
@@ -109,8 +110,8 @@ case class Commoner(name: String,
                     health: HealthStatus = Fine,
                     currentActivity: CurrentActivity = Idle,
                     actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
-                    inbox: Queue[Message] = Queue.empty[Message],
-                    outbox: Queue[Message] = Queue.empty[Message]
+                    inbox: Queue[Message[Entity, Commoner, Commoner]] = Queue.empty[Message[Entity, Commoner, Commoner]],
+                    outbox: Queue[Message[Commoner, Entity, Entity]] = Queue.empty[Message[Commoner, Entity, Entity]]
                    )
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
@@ -138,7 +139,7 @@ case class Commoner(name: String,
   @tailrec
   private def performNextReaction(datetime: DateTime, location: Location,
                                   person: Commoner,
-                                  reactions: ActionCandidates): Commoner = {
+                                  reactions: ReactionCandidates): Commoner = {
     reactions match {
       case Nil => person
       case (possibleReaction, condition) :: remainingCandidates =>
@@ -168,7 +169,7 @@ case class Commoner(name: String,
         if (DEBUG) println(s"${person.name} still working on $performance, ticks remaining ${performance.ticksRemaining}")
         perform(performance, person = person)
       case Idle =>
-        val action = selectAction(time, location, person = person, candidates = candidateActions)
+        val (action, maybeMessages) = selectAction(time, location, person = person, candidates = candidateActions)
         val performance = CommonerPerformance(perform = action)
         if (DEBUG) println(s"${person.name} idle,  starting $action will take ${performance.ticksRemaining}")
 
@@ -190,16 +191,28 @@ case class Commoner(name: String,
   @tailrec
   private def selectAction(datetime: DateTime, location: Location,
                            person: Commoner,
-                           candidates: ActionCandidates): Action[Commoner] = {
+                           candidates: ActionCandidates): (
+    Action[Commoner], Option[Message[Commoner, Facility, Facility]]
+    ) = {
     candidates match {
-      case Nil => NoAction
-      case (candidateAction, condition) :: remainingCandidates =>
+      case Nil => (NoAction, None)
+      case (candidateAction, condition, interactionGenerator) :: remainingCandidates =>
         val shouldAct = condition(datetime, location, person)
         if (DEBUG && shouldAct) {
           val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
           println(msg)
         }
-        if (shouldAct) candidateAction
+        if (shouldAct) {
+          interactionGenerator match {
+            case None => (candidateAction, None)
+            case Some(interactions) =>
+              val maybeMessages = interactions(person, location)
+              maybeMessages match {
+                case None => (candidateAction, None)
+                case Some(message) => (candidateAction, Some(message))
+              }
+          }
+        }
         else selectAction(
           datetime, location,
           person,
