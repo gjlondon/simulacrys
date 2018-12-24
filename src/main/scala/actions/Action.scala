@@ -165,6 +165,19 @@ object Eat extends Action[Commoner] {
   override val interruptable: Boolean = false
 }
 
+object Sleep extends Action[Commoner] {
+  override val volition: Volition = Voluntary
+  override val durationToComplete: Time = Hours(8)
+
+  override def apply(person: Commoner): Commoner = {
+    person
+  }
+
+  override val name: String = "Sleep"
+  override val exclusive: Boolean = true
+  override val interruptable: Boolean = true
+}
+
 object CommonerActions {
 
   def shouldMetabolize(time: DateTime, world: World, person: Commoner): Boolean = {
@@ -186,7 +199,7 @@ object CommonerActions {
   }
 
   def shouldSleep(time: DateTime, world: World, person: Commoner): Boolean = {
-    val isNight = time.getHourOfDay >= 22 || time.getHourOfDay < 7
+    val isNight = time.getHourOfDay >= 22 || time.getHourOfDay < 6
     isNight
   }
 
@@ -210,6 +223,6 @@ object CommonerActions {
     (Farm, shouldFarm),
 //    ("relax", relax, shouldRelax),
 //    ("procreate", procreate, shouldProcreate),
-//    ("sleep", sleep, shouldSleep)
+    (Sleep, shouldSleep)
   )
 }
