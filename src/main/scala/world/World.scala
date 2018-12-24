@@ -70,12 +70,12 @@ object Grid {
   def randomGrid(startingTime: DateTime,
                  size: Int = 100): Grid = {
     val positions = (0 to size).map { _ =>
-      val locTypes = Array(Farm, Manor, City)
+      Random.nextInt(3) match {
+        case 0 => City.buildRandom(startingTime)
+        case 1 => Manor.buildRandom(startingTime)
+        case 2 => Farm.buildRandom(startingTime)
+      }
 
-      val kls = Random.shuffle(locTypes.toList).head
-      val randomPop = Populace.randomPop(15, startingTime)
-      val facilities = Map[Facility, List[Facility]]()
-      kls("here", randomPop, facilities)
     }.toVector
 
     Grid(positions)

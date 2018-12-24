@@ -1,5 +1,7 @@
 package location
 
+import facility.Facility
+import org.joda.time.DateTime
 import populace.Populace
 
 import scala.util.Random
@@ -7,11 +9,10 @@ import scala.util.Random
 
 sealed trait Location {
   def overview: String = {
-    s"Location $name has a living populace of size ${this.livingPopSize}"
+    s"Location $name of type ${this.getClass.getSimpleName} has a living populace of size ${this.livingPopSize}"
   }
 
   val facilities: Facilities
-
   val name: String
   val populace: Populace
   def livingPopulace: Populace = populace.living
@@ -27,6 +28,17 @@ case class City(name: String,
   }
 }
 
+object City {
+  def buildRandom(startingTime: DateTime): City = {
+    val name = LocationNames.nextName
+    val randomPop = Populace.randomPop(ofSize = typicalPopulation, startingTime)
+    val facilities = Map[Facility, List[Facility]]()
+    City(name, randomPop, facilities)
+  }
+
+  val typicalPopulation: Int = 25
+}
+
 case class Manor(name: String,
                  populace: Populace,
                  facilities: Facilities) extends Location {
@@ -35,13 +47,38 @@ case class Manor(name: String,
   }
 }
 
+object Manor {
+  def buildRandom(startingTime: DateTime): Manor = {
+    val name = LocationNames.nextName
+    val randomPop = Populace.randomPop(ofSize = typicalPopulation, startingTime)
+    val facilities = Map[Facility, List[Facility]]()
+    Manor(name, randomPop, facilities)
+  }
+
+  val typicalPopulation: Int = 15
+}
+
 case class Farm(name: String,
                 populace: Populace,
                 facilities: Facilities) extends Location {
   override def withNewPopulace(populace: Populace): Location = {
     this.copy(populace = populace)
   }
+
 }
+
+object Farm {
+  def buildRandom(startingTime: DateTime): Farm = {
+    val name = LocationNames.nextName
+    val randomPop = Populace.randomPop(ofSize = typicalPopulation, startingTime)
+    val facilities = Map[Facility, List[Facility]]()
+    Farm(name, randomPop, facilities)
+  }
+
+  val typicalPopulation: Int = 10
+}
+
+
 
 object LocationNames {
 
