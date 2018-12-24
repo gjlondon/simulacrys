@@ -1,6 +1,6 @@
 package location
 
-import facility.Facility
+import facility._
 import org.joda.time.DateTime
 import populace.Populace
 
@@ -32,8 +32,16 @@ object City {
   def buildRandom(startingTime: DateTime): City = {
     val name = LocationNames.nextName
     val randomPop = Populace.randomPop(ofSize = typicalPopulation, startingTime)
-    val facilities = Map[Facility, List[Facility]]()
+    val facilities = typicalFacilities
     City(name, randomPop, facilities)
+  }
+  
+  def typicalFacilities: Facilities = {
+    Map[FacilityGroup, List[Facility]](
+      Farms -> List(facility.Farm()),
+      Pastures -> List(facility.Pasture()),
+      Forests -> List(facility.Forest())
+    )
   }
 
   val typicalPopulation: Int = 25
@@ -51,11 +59,19 @@ object Manor {
   def buildRandom(startingTime: DateTime): Manor = {
     val name = LocationNames.nextName
     val randomPop = Populace.randomPop(ofSize = typicalPopulation, startingTime)
-    val facilities = Map[Facility, List[Facility]]()
+    val facilities = typicalFacilities
     Manor(name, randomPop, facilities)
   }
 
   val typicalPopulation: Int = 15
+
+  def typicalFacilities: Facilities = {
+    Map[FacilityGroup, List[Facility]](
+      Farms -> List(facility.Farm(), facility.Farm()),
+      Pastures -> List(facility.Pasture(), facility.Pasture()),
+      Forests -> List(facility.Forest(), facility.Forest())
+    )
+  }
 }
 
 case class Farm(name: String,
@@ -71,11 +87,19 @@ object Farm {
   def buildRandom(startingTime: DateTime): Farm = {
     val name = LocationNames.nextName
     val randomPop = Populace.randomPop(ofSize = typicalPopulation, startingTime)
-    val facilities = Map[Facility, List[Facility]]()
+    val facilities = typicalFacilities
     Farm(name, randomPop, facilities)
   }
 
   val typicalPopulation: Int = 10
+
+  def typicalFacilities: Facilities = {
+    Map[FacilityGroup, List[Facility]](
+      Farms -> List(facility.Farm(), facility.Farm(), facility.Farm()),
+      Pastures -> List(facility.Pasture(), facility.Pasture(), facility.Pasture()),
+      Forests -> List(facility.Forest(), facility.Forest(), facility.Forest())
+    )
+  }
 }
 
 
