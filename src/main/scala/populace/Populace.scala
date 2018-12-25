@@ -1,5 +1,7 @@
 package populace
 
+import message.Mailbox
+import message.MailboxTypes.Mailbox
 import org.joda.time.DateTime
 import person.{Commoner, Person}
 import status.Dead
@@ -31,6 +33,9 @@ class Populace(seq : Person*) extends Set[Person]
 
   def iterator : Iterator[Person] = seq.iterator
 
+  val outgoingMessages: Mailbox = {
+    this.foldLeft(Mailbox.empty)((soFar, person) => soFar ++ person.outbox)
+  }
 }
 
 object Populace {

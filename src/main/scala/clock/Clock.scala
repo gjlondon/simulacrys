@@ -1,14 +1,21 @@
 package clock
 
+import java.util.UUID
+
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration
 import constants.Constants.TICK_DURATION
 import location.Location
+import message.MailboxTypes.Mailbox
+import message.{Mailbox, Message}
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import person.Person
+import populace.Populace
 import world.World
 
 import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 import scala.collection.mutable.ListBuffer
 
 
@@ -22,7 +29,7 @@ object Clock {
 
     // TODO replace with some kind of partial (was getting collection construction errors when I tried)
 
-    val newLocations =
+    val results =
       if (Configuration.PARALLEL) {
         world.grid.positions.par.map(updateLocation(time, world))
       }
@@ -30,7 +37,14 @@ object Clock {
         world.grid.positions.map(updateLocation(time, world))
       }
 
-    val newWorld = World.fromLocations(newLocations.toVector)
+    val (newLocations, outgoingMessages) = results.unzip
+    // TODO: this seems like a big performance hit -- can it be faster?
+    val allOutgoingMessages = outgoingMessages.foldLeft(Mailbox.empty)((a, b) => a ++ b)
+    val locationsPostDelivery = deliverMessagesToAllLocations(
+      newLocations.toList,
+      allOutgoingMessages
+    )
+    val newWorld = World.fromLocations(locationsPostDelivery.toVector)
     if (Configuration.DEBUG) debugPopulationGrowth(newWorld)
 
     printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
@@ -38,9 +52,29 @@ object Clock {
     tick(tickNum + 1, maxTicks, newWorld, time = time + TICK_DURATION)
   }
 
-  def updateLocation(time: DateTime, world: World)(loc: Location): Location = {
+  def deliverMessagesToAllLocations(locations: List[Location],
+                                    messages: Mailbox): List[Location] = {
+    val messagesByRecipient = messages.groupBy { msg: Message => msg.to }
+    locations.par.map { l: Location =>
+      deliverMessagesToLocation(l, messagesByRecipient)
+
+    }.toList
+  }
+
+  def deliverMessagesToLocation(location: Location,
+                                messagesByRecipient: Map[UUID, Queue[Message]]): Location = {
+    val delivered = location.populace.par.map { p: Person =>
+      val messagesToPerson = messagesByRecipient.getOrElse(p.address, Queue[Message]())
+      p.receiveMessages(messagesToPerson)
+    }.seq.toSeq
+    location.withNewPopulace(Populace(delivered: _*))
+  }
+
+
+  def updateLocation(time: DateTime, world: World)(loc: Location): (Location, Mailbox) = {
     val updatedPopulace = loc.populace map { p => p.update(time = time, location = loc) }
-    loc.withNewPopulace(populace = updatedPopulace.living)
+    val outgoingMessages = updatedPopulace.outgoingMessages
+    (loc.withNewPopulace(populace = updatedPopulace.living), outgoingMessages)
   }
 
   private def debugPopulationGrowth(newWorld: World): Unit = {

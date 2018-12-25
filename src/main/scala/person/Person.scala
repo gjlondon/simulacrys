@@ -76,6 +76,7 @@ sealed trait Person extends Entity {
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
   def update(time: DateTime, location: Location): Person
+  def receiveMessages(messages: Queue[Message]): Person
 
   val foodEnergyRequired: Energy = {
     val required: Int = (ageBracket: AgeBracket, gender) match {
@@ -127,13 +128,13 @@ case class Commoner(name: String,
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
 
-  def handleRequest(req: Request[AnyRef, Commoner],
-                    person: Commoner): (Commoner, Reply[Commoner, AnyRef]) = {
+  def handleRequest(req: Request[Commoner],
+                    person: Commoner): (Commoner, Reply) = {
     val success = req.condition(person)
     val update = if(success) req.onSuccess else req.onFailure
-    val updated = update(person)
-    val reply = Reply[Commoner, AnyRef](
-      from = updated,
+    val updated: Commoner = update(person)
+    val reply = Reply(
+      from = updated.address,
       to = req.from,
       succeeded = success,
       re = req.uuid
@@ -142,7 +143,7 @@ case class Commoner(name: String,
     (updated, reply)
   }
 
-  def handleReply(reply: Reply[AnyRef, Commoner],
+  def handleReply(reply: Reply,
                   person: Commoner,
                   replyHandlers: ReplyHandlers): Commoner = {
 
@@ -161,25 +162,26 @@ case class Commoner(name: String,
         case None => (person, Mailbox.empty)
         case Some((message, remaining)) =>
           message match {
-            case req if classOf[Request[AnyRef, Commoner]].isInstance(req) =>
+            case req if classOf[Request[Commoner]].isInstance(req) =>
               // safe to coerce because we've just checked the type compliance
-              val coercedReq = req.asInstanceOf[Request[AnyRef, Commoner]]
+              val coercedReq = req.asInstanceOf[Request[Commoner]]
               val (updated, reply) = handleRequest(coercedReq, person)
               go(remaining, updated, outbox.enqueue(reply))
-            case rep if classOf[Reply[AnyRef, Commoner]].isInstance(rep) =>
-              // safe to coerce because we've just checked the type compliance
-              val coercedRep = rep.asInstanceOf[Reply[AnyRef, Commoner]]
-              val updated = handleReply(coercedRep, person, replyHandlers)
+            case rep: Reply =>
+              val updated = handleReply(rep, person, replyHandlers)
               go(remaining, updated, outbox)
+            // this probably shouldn't happen:
+            case _ => (person, Mailbox.empty)
           }
       }
     }
-    go(inbox, person, Mailbox.empty)
+    val (processedPerson, outbox) = go(inbox, person, Mailbox.empty)
+    (processedPerson.copy(inbox = Mailbox.empty), outbox)
   }
 
   def update(time: DateTime, location: Location): Commoner =  {
-    val noOpNotReq = message.Request[Commoner, Commoner](
-      from = this, to = this, condition = {
+    val noOpNotReq = message.Request[Commoner](
+      from = this.address, to = this.address, condition = {
         case _: Commoner => true
         case _ => false
       },
@@ -213,7 +215,7 @@ case class Commoner(name: String,
     // so it's safe to assume that in a given tick, a person will take at most one action
     val afterActions = act(time, location, afterReactions)
 
-    afterActions.copy(asOf = time)
+    afterActions.copy(asOf = time, outbox = outbox)
   }
 
   private def react(time: DateTime, location: Location, person: Commoner): Commoner = {
@@ -308,6 +310,10 @@ case class Commoner(name: String,
           remainingCandidates,
         )
     }
+  }
+
+  override def receiveMessages(messages: Queue[Message]): Commoner = {
+    this.copy(inbox = inbox ++ messages)
   }
 }
 
