@@ -50,7 +50,6 @@ package object healthCalculations {
 import person.healthCalculations.{calcBodyMassIndex, calcWeightStatus}
 
 sealed trait Person extends Entity {
-  override type Specific = Person
   val name: String
   val inventory: FoodInventory
   val health: HealthStatus
@@ -60,6 +59,7 @@ sealed trait Person extends Entity {
   val height: Distance
   val leanBodyMass: Mass
   val availableBodyFat: Mass
+  override type Specific = Commoner
 
   val age: Int = (birthDate to asOf).toPeriod.getYears
 
@@ -76,8 +76,6 @@ sealed trait Person extends Entity {
   def weight: Mass = leanBodyMass + availableBodyFat
   def bodyMassIndex: AreaDensity = calcBodyMassIndex(height, weight)
   def weightStatus: WeightStatus = calcWeightStatus(bodyMassIndex)
-  def update(time: DateTime, location: Location): Person
-  def receiveMessages(messages: Queue[Message]): Person
 
   val foodEnergyRequired: Energy = {
     val required: Int = (ageBracket: AgeBracket, gender) match {
@@ -127,6 +125,8 @@ case class Commoner(name: String,
                     replyHandlers: CommonerReplyHandlers = emptyReplyHandler
                    )
   extends Person {
+  override type Specific = Commoner
+
   import actions.CommonerActions.{candidateActions, involuntaryActions}
   import person.Handlers.CommonerReplyHandlers
 
@@ -163,41 +163,6 @@ case class Commoner(name: String,
     )
 
     (updated, reply)
-  }
-
-  def handleReply(reply: Reply,
-                  person: Commoner,
-                  replyHandlers: CommonerReplyHandlers): Commoner = {
-
-    replyHandlers.get(reply.uuid) match {
-      case None => person
-      case Some((onSuccess, onFailure)) =>
-        if (reply.succeeded) onSuccess(person) else onFailure(person)
-    }
-  }
-
-  def processInbox(inbox: Inbox, entity: Commoner, replyHandlers: CommonerReplyHandlers): (Commoner, Outbox) = {
-
-    @tailrec
-    def go(inbox: Inbox, person: Commoner, outbox: Outbox): (Commoner, Outbox) = {
-      inbox.dequeueOption match {
-        case None => (person, Mailbox.empty)
-        case Some((message, remaining)) =>
-          message match {
-            case req: Request =>
-              // safe to coerce because we've just checked the type compliance
-              val (updated, reply) = handleRequest(req, person)
-              go(remaining, updated, outbox.enqueue(reply))
-            case rep: Reply =>
-              val updated = handleReply(rep, person, replyHandlers)
-              go(remaining, updated, outbox)
-            // this probably shouldn't happen:
-            case _ => (person, Mailbox.empty)
-          }
-      }
-    }
-    val (processedPerson, outbox) = go(inbox, entity, Mailbox.empty)
-    (processedPerson.copy(inbox = Mailbox.empty), outbox)
   }
 
   def update(time: DateTime, location: Location): Commoner =  {
@@ -239,35 +204,6 @@ case class Commoner(name: String,
     val afterActions = act(time, location, afterReactions)
 
     afterActions.copy(asOf = time, outbox = outbox)
-  }
-
-  private def react(time: DateTime, location: Location, person: Commoner): Commoner = {
-    // resolve involuntary actions
-    // TODO add a concept of thirst
-
-    performNextReaction(datetime = time, location = location,
-      person = person, reactions = involuntaryActions)
-  }
-
-  @tailrec
-  private def performNextReaction(datetime: DateTime, location: Location,
-                                  person: Commoner,
-                                  reactions: ReactionCandidates): Commoner = {
-    reactions match {
-      case Nil => person
-      case (possibleReaction, condition) :: remainingCandidates =>
-        val shouldReact = condition(datetime, location, person)
-        if (DEBUG && shouldReact) {
-          val msg = s"Person ${person.name} should perform ${possibleReaction.name} at time $datetime"
-          println(msg)
-        }
-        val action = if (shouldReact) possibleReaction else CommonerNoAction
-        performNextReaction(
-          datetime, location,
-          action(person),
-          remainingCandidates,
-        )
-    }
   }
 
   def act(time: DateTime, location: Location, person: Commoner): Commoner =  {
@@ -338,16 +274,6 @@ case class Commoner(name: String,
   override def receiveMessages(messages: Queue[Message]): Commoner = {
     this.copy(inbox = inbox ++ messages)
   }
-
-  override def test(m: Person): Unit = ???
-
-  override def requestSucceeds(payload: MessagePayload, Specific: Person): Boolean = ???
-
-  override def onRequestSuccess(payload: MessagePayload, Specific: Person): Person = ???
-
-  override def onRequestFailure(payload: MessagePayload, Specific: Person): Person = ???
-
-  override def handleRequest(req: Request, Specific: Person): (Person, Reply) = ???
 }
 
 object Commoner {

@@ -21,82 +21,10 @@ sealed trait Facility extends Entity {
   val isAvailable: Boolean = capacity >= 1
   val replyHandlers: ReplyHandlers
 
-  override def test(m: Specific) = ???
   def reserve: Specific
   def release: Specific
   override def receiveMessages(messages: Queue[Message]): Specific
 
-  def handleReply(reply: Reply,
-                  entity: Specific,
-                  replyHandlers: ReplyHandlers): Specific = {
-
-    replyHandlers.get(reply.uuid) match {
-      case None => entity
-      case Some((onSuccess, onFailure)) =>
-        if (reply.succeeded) onSuccess(entity) else onFailure(entity)
-    }
-  }
-
-  def processInbox(inbox: Inbox,
-                   entity: Specific,
-                   replyHandlers: ReplyHandlers): (Specific, Outbox) = {
-
-    @tailrec
-    def go(inbox: Inbox, entity: Specific, outbox: Outbox): (Specific, Outbox) = {
-      inbox.dequeueOption match {
-        case None => (entity, Mailbox.empty)
-        case Some((message, remaining)) =>
-          message match {
-            case req: Request =>
-              // safe to coerce because we've just checked the type compliance
-              val (updated, reply) = handleRequest(req, entity)
-              go(remaining, updated, outbox.enqueue(reply))
-            case rep: Reply =>
-              val updated = handleReply(rep, entity, replyHandlers)
-              go(remaining, updated, outbox)
-            // this probably shouldn't happen:
-            case _ => (entity, Mailbox.empty)
-          }
-      }
-    }
-    val (processedPerson, outbox) = go(inbox, entity, Mailbox.empty)
-    // TODO put back inbox emptying
-    (processedPerson, outbox)
-  }
-
-  private def react(time: DateTime, location: Location, entity: Specific): Specific = {
-    // resolve involuntary actions
-    // TODO add a concept of thirst
-
-    performNextReaction(datetime = time, location = location,
-      entity = entity, reactions = involuntaryActions)
-  }
-
-  val involuntaryActions: ReactionCandidates = List()
-  type ReactionCandidates = List[(Reaction[Specific], (DateTime, Location, Specific) => Boolean)]
-
-  @tailrec
-  private def performNextReaction(datetime: DateTime, location: Location,
-                                  entity: Specific,
-                                  reactions: ReactionCandidates): Specific = {
-    reactions match {
-      case Nil => entity
-      case (possibleReaction, condition) :: remainingCandidates =>
-        val shouldReact = condition(datetime, location, entity)
-
-        val action: Action[Specific] = possibleReaction
-        // TODO fix noAction
-        //        if (shouldReact) possibleReaction else {
-//          val noAction: Action[Specific] = FacilityNoAction()
-//          noAction
-//        }
-        performNextReaction(
-          datetime, location,
-          action(entity),
-          remainingCandidates,
-        )
-    }
-  }
 
 //  override def update(time: DateTime,
 //                      location: Location): Specific = {
@@ -286,73 +214,9 @@ case class Farm(capacity: Int = 2,
     (updated, reply)
   }
 
-  override def handleReply(reply: Reply,
-                           person: Farm,
-                           replyHandlers: FarmReplyHandlers): Farm = {
-
-    replyHandlers.get(reply.uuid) match {
-      case None => person
-      case Some((onSuccess, onFailure)) =>
-        if (reply.succeeded) onSuccess(person) else onFailure(person)
-    }
-  }
-
-  override def processInbox(inbox: Inbox,
-                            entity: Farm,
-                            replyHandlers: FarmReplyHandlers): (Farm, Outbox) = {
-
-    @tailrec
-    def go(inbox: Inbox, person: Farm, outbox: Outbox): (Farm, Outbox) = {
-      inbox.dequeueOption match {
-        case None => (person, Mailbox.empty)
-        case Some((message, remaining)) =>
-          message match {
-            case req: Request =>
-              val (updated, reply) = handleRequest(req, person)
-              go(remaining, updated, outbox.enqueue(reply))
-            case rep: Reply =>
-              val updated = handleReply(rep, person, replyHandlers)
-              go(remaining, updated, outbox)
-            // this probably shouldn't happen:
-            case _ => (person, Mailbox.empty)
-          }
-      }
-    }
-    val (processedPerson, outbox) = go(inbox, entity, Mailbox.empty)
-    (processedPerson.copy(inbox = Mailbox.empty), outbox)
-  }
-
-  private def react(time: DateTime, location: Location, entity: Farm): Farm = {
-    // resolve involuntary actions
-    // TODO add a concept of thirst
-
-    performNextReaction(datetime = time, location = location,
-      entity = entity, reactions = involuntaryActions)
-  }
-
   override val involuntaryActions: ReactionCandidates = List()
   override type ReactionCandidates = List[(Reaction[Specific], (DateTime, Location, Specific) => Boolean)]
 
-  @tailrec
-  private def performNextReaction(datetime: DateTime, location: Location,
-                                  entity: Farm,
-                                  reactions: ReactionCandidates): Farm = {
-    reactions match {
-      case Nil => entity
-      case (possibleReaction, condition) :: remainingCandidates =>
-        val shouldReact = condition(datetime, location, entity)
-        if (DEBUG && shouldReact) {
-          val msg = s"Person ${entity.name} should perform ${possibleReaction.name} at time $datetime"
-          println(msg)
-        }
-        val action: Action[Farm] = if (shouldReact) possibleReaction else FarmNoAction
-        performNextReaction(
-          datetime, location,
-          action(entity),
-          remainingCandidates,
-        )
-    }
-  }
 
 }
 
