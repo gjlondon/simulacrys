@@ -56,10 +56,10 @@ case class NoOpInteraction(onSuccess: Commoner, onFailure: Commoner) extends Int
   override val name: String = "No Op on Person"
 }
 
-case class Till(person: Commoner) extends Interaction[Commoner, Facility, Facility] {
-  override val preconditionMet: Facility => Boolean = {
+case class Till(person: Commoner) extends Interaction[Commoner, facility.Farm, facility.Farm] {
+  override val preconditionMet: facility.Farm => Boolean = {
     f => f.isAvailable }
-  override val effect: Facility => Facility = {
+  override val effect: facility.Farm => facility.Farm = {
     f => f.reserve }
   override val onSuccess: Commoner = { actions.Farm(person) }
   override val onFailure: Commoner = { person }
@@ -141,7 +141,7 @@ object CommonerNoAction extends Action[Commoner] {
   override val volition: Volition = Voluntary
 }
 
-object FarmNoAction extends Action[facility.Farm] {
+case object FarmNoAction extends Action[facility.Farm] {
 
   override val durationToComplete: Time = Minutes(0)
   override val name: String = "No Action"
