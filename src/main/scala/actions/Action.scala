@@ -1,12 +1,10 @@
 package actions
 
 import constants.Constants.{ENERGY_PER_KILO_OF_FAT, TICK_DURATION}
-import entity.Entity
 import facility.{Facility, Farms}
 import inventory.FoodInventory
 import location.Location
 import meal.Meal
-import message.PersonToFacilityMessage
 import org.joda.time.DateTime
 import person.{ActionCandidates, Commoner, ReactionCandidates, TypicalTimes}
 import resource.{FoodItemGroup, Fresh, Freshness, SimpleFood}
@@ -286,23 +284,23 @@ object CommonerActions {
   }
   val unit: Commoner => Commoner = { c: Commoner => c }
 
-  def farmInteraction(person: Commoner,
-                      location: Location,
-                      ): Option[PersonToFacilityMessage] = {
-    val interaction = Till(person)
-    val targetFarm = location.findAvailableFacility(Farms)
-    targetFarm match {
-      case None => None
-      case Some(farm) => Some(PersonToFacilityMessage(from = person, to = farm,
-        payload = interaction))
-    }
-
-  }
+//  def farmInteraction(person: Commoner,
+//                      location: Location,
+//                      ): Option[PersonToFacilityMessage] = {
+//    val interaction = Till(person)
+//    val targetFarm = location.findAvailableFacility(Farms)
+//    targetFarm match {
+//      case None => None
+//      case Some(farm) => Some(PersonToFacilityMessage(from = person, to = farm,
+//        payload = interaction))
+//    }
+//
+//  }
 
   val candidateActions: ActionCandidates = List(
 
     (Eat, shouldEat, None),
-    (Farm, shouldFarm, Some(farmInteraction)),
+    (Farm, shouldFarm, None), // Some(farmInteraction)),
 //    ("relax", relax, shouldRelax),
 //    ("procreate", procreate, shouldProcreate),
     (Sleep, shouldSleep, None)

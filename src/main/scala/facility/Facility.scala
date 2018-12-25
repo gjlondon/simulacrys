@@ -1,10 +1,8 @@
 package facility
 
 import entity.Entity
+import message.Mailbox
 import message.MailboxTypes.{Inbox, Outbox}
-import message.{Mailbox, Message}
-
-import scala.collection.immutable.Queue
 
 sealed trait Facility extends Entity {
   val name: String = this.getClass.getSimpleName

@@ -7,10 +7,9 @@ import com.github.nscala_time.time.Imports._
 import configuration.Configuration.DEBUG
 import demographic._
 import entity.Entity
-import facility.Facility
 import inventory.FoodInventory
 import location.Location
-import message.MailboxTypes.{Inbox, Outbox}
+import message.MailboxTypes.{Inbox, Mailbox, Outbox}
 import message._
 import org.joda.time.DateTime
 import resource.Calorie.calorie
@@ -118,78 +117,13 @@ case class Commoner(name: String,
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
 
-  def handleMessage(message: Message[Entity, Entity, Entity], person: Commoner): Commoner = {
-    val payload = message.payload
-    if (payload.preconditionMet(person)) {
-      val effectedPerson = payload.effect(person)
-      payload.onSuccess match {
-        case c: Commoner => c
-      }
-    }
-    else payload.onFailure match {
-      case c: Commoner => c
-    }
-  }
 
-  def handleRequest(request: Request[AnyRef, Commoner],
+  def handleNoteReq(req: Request[AnyRef, Commoner],
                     person: Commoner): (Commoner, Reply[Commoner, AnyRef]) = {
-//    println("request")
-    val (updated, succeeded) = if (request.condition(person)) {
-      (request.effect(person), true)
-    }
-
-    else (person, false)
-    val reply = Reply(from = updated, to = request.from, succeeded=true,
-      onFailure = (a: AnyRef) => a, onSuccess = (a: AnyRef) => a)
-    (updated, reply)
-  }
-
-  def handleReply(reply: Reply[AnyRef, Commoner], person: Commoner): Commoner = {
-//    println("reply")
-
-    if (reply.succeeded) {
-      reply.onSuccess(person)
-    }
-    else reply.onFailure(person)
-  }
-
-//  def handleMsg[T](msg: Msg[T, Commoner],
-//                person: Commoner): (Commoner, Option[Msg[Commoner, T]]) = {
-//    val success = msg.condition(person)
-//
-//    val replyMsg = message.NoteRequest[Commoner, T](
-//      from = this, to = _, condition = {
-//        case _: Commoner => true
-//        case _ => false
-//      },
-//      onSuccess = {
-//        case c: Commoner => Some(c)
-//        case _ => None
-//      },
-//      onFailure = {
-//        case c: Commoner => Some(c)
-//        case _ => None
-//      }
-//    )
-//
-//    val (update, reply) = if(success) {
-//      (msg.onSuccess, replyMsg)
-//    } else {
-//      (msg.onFailure, replyMsg)
-//    }
-//    val updated = update(person) match {
-//      case None => person
-//      case Some(p) => p
-//    }
-//    (updated, Some(reply))
-//  }
-
-  def handleNoteReq(req: NoteRequest[AnyRef, Commoner],
-                    person: Commoner): (Commoner, NoteReply[Commoner, AnyRef]) = {
     val success = req.condition(person)
     val update = if(success) req.onSuccess else req.onFailure
     val updated = update(person)
-    val reply = NoteReply[Commoner, AnyRef](
+    val reply = Reply[Commoner, AnyRef](
       from = updated,
       to = req.from,
       succeeded = success,
@@ -200,34 +134,7 @@ case class Commoner(name: String,
   }
 
   def update(time: DateTime, location: Location): Commoner =  {
-    val noOpRequest = message.Request[Commoner, Commoner](
-      from = this, to = this, condition = _ => true, effect = c => c,
-      onSuccess = {
-        case c: Commoner => Some(c)
-        case _ => None
-      },
-      onFailure = {
-        case c: Commoner => Some(c)
-        case _ => None
-      }
-    )
-
-//    val noOpMsg = message.Msg[Commoner, Commoner](
-//      from = this, to = this, condition = {
-//        case _: Commoner => true
-//        case _ => false
-//      },
-//      onSuccess = {
-//        case c: Commoner => Some(c)
-//        case _ => None
-//      },
-//      onFailure = {
-//        case c: Commoner => Some(c)
-//        case _ => None
-//      }
-//    )
-
-    val noOpNotReq = message.NoteRequest[Commoner, Commoner](
+    val noOpNotReq = message.Request[Commoner, Commoner](
       from = this, to = this, condition = {
         case _: Commoner => true
         case _ => false
@@ -251,42 +158,6 @@ case class Commoner(name: String,
         if (reply.succeeded) onSuccess (updated) else onFailure (updated)
     }
 
-//    val (updated, reply) = handleMsg(noOpMsg, person = this)
-//
-//    val (updated2, reply2) = reply match {
-//      case None => (updated, None)
-//      case Some(msg) => handleMsg(msg, person = updated)
-//    }
-
-
-
-    val noOpReply = message.Reply[Commoner, Commoner](
-      from = this, to = this, succeeded = true,
-      onSuccess = (c: Commoner) => c, onFailure = (c: Commoner) => c
-    )
-    val inbox = Queue[ReqRep](noOpRequest, noOpReply)
-
-    val (nextReq, nextInbox) = inbox.dequeue
-    val postHandle = nextReq match {
-      case rep if classOf[Reply[AnyRef, Commoner]].isInstance(rep) =>
-        handleReply(rep.asInstanceOf[Reply[AnyRef, Commoner]], this)
-      case req if classOf[Request[AnyRef, Commoner]].isInstance(req) =>
-        handleRequest(req.asInstanceOf[Request[AnyRef, Commoner]], this)
-      case _ => (this, None)
-    }
-
-    val (nextReq2, next2Inbox) = nextInbox.dequeue
-    val postHandle2 = nextReq2 match {
-      case rep if classOf[Reply[AnyRef, Commoner]].isInstance(rep) =>
-        handleReply(rep.asInstanceOf[Reply[AnyRef, Commoner]], this)
-      case req if classOf[Request[AnyRef, Commoner]].isInstance(req) =>
-        handleRequest(req.asInstanceOf[Request[AnyRef, Commoner]], this)
-      case _ => (this, None)
-    }
-
-    val interaction = NoOpInteraction(onSuccess = this, onFailure = this)
-    val noOpMessage = PersonNoOp(from = this, to = this, payload = interaction)
-//    handleMessage(noOpMessage, this)
     // 1. process all messages in inbox, updating state as necessary
 
     // 2. if appropriate, create some messages to send to entities with whom
@@ -370,7 +241,7 @@ case class Commoner(name: String,
   private def selectAction(datetime: DateTime, location: Location,
                            person: Commoner,
                            candidates: ActionCandidates): (
-    Action[Commoner], Option[Message[Commoner, Facility, Facility]]
+    Action[Commoner], Option[Mailbox]
     ) = {
     candidates match {
       case Nil => (NoAction, None)
@@ -381,15 +252,16 @@ case class Commoner(name: String,
           println(msg)
         }
         if (shouldAct) {
-          interactionGenerator match {
-            case None => (candidateAction, None)
-            case Some(interactions) =>
-              val maybeMessages = interactions(person, location)
-              maybeMessages match {
-                case None => (candidateAction, None)
-                case Some(message) => (candidateAction, Some(message))
-              }
-          }
+          (candidateAction, None)
+//          interactionGenerator match {
+//            case None => (candidateAction, None)
+//            case Some(interactions) =>
+//              val maybeMessages = interactions(person, location)
+//              maybeMessages match {
+//                case None => (candidateAction, None)
+//                case Some(message) => (candidateAction, Some(message))
+//              }
+//          }
         }
         else selectAction(
           datetime, location,
