@@ -68,7 +68,11 @@ object Clock {
       val messagesToPerson = messagesByRecipient.getOrElse(p.address, Queue[Message]())
       p.receiveMessages(messagesToPerson)
     }.seq.toSeq
-    location.withNewPopulace(Populace(delivered: _*))
+//    val deliveredFacilities = location.facilities.par.map { f: Facility =>
+//      val messagesToFacility = messagesByRecipient.getOrElse(f.address, Queue[Message]())
+//      f.receiveMessages(messagesToFacility)
+//    }.seq.toSeq
+    location.withNewPopulace(Populace(deliveredPeople: _*))
   }
 
 

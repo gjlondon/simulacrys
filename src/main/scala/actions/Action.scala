@@ -1,6 +1,7 @@
 package actions
 
 import constants.Constants.{ENERGY_PER_KILO_OF_FAT, TICK_DURATION}
+import entity.Entity
 import facility.{Facility, Farms}
 import inventory.FoodInventory
 import location.Location
@@ -26,7 +27,7 @@ trait Volition
 case object Voluntary extends Volition
 case object Involuntary extends Volition
 
-sealed trait Action[T <: Commoner] {
+sealed trait Action[T <: Entity] {
   def ticksRequired: Int = {
     val secondsInTick: Time = Seconds(TICK_DURATION.seconds)
     Math.ceil(durationToComplete / secondsInTick).toInt
@@ -65,7 +66,7 @@ case class Till(person: Commoner) extends Interaction[Commoner, Facility, Facili
   override val name: String = "Till the land"
 }
 
-sealed trait Reaction extends Action[Commoner] {
+sealed trait Reaction[T <: Entity] extends Action[T] {
   override val instant: Boolean = true
   override val durationToComplete: Time = Minutes(0)
   override val exclusive: Boolean = true
@@ -74,7 +75,7 @@ sealed trait Reaction extends Action[Commoner] {
 
 }
 
-object Metabolize extends Reaction {
+object Metabolize extends Reaction[Commoner] {
 
   override val name: String = "Metabolize"
 
@@ -98,7 +99,7 @@ object Metabolize extends Reaction {
   }
 }
 
-object TransitionHealth extends Reaction {
+object TransitionHealth extends Reaction[Commoner] {
 
   override val name: String = "Update Health"
 
@@ -126,7 +127,7 @@ object TransitionHealth extends Reaction {
 }
 
 
-object NoAction extends Action[Commoner] {
+object CommonerNoAction extends Action[Commoner] {
 
   override val durationToComplete: Time = Minutes(0)
   override val name: String = "No Action"
@@ -135,6 +136,20 @@ object NoAction extends Action[Commoner] {
 
   override def apply(person: Commoner): Commoner = {
     person
+  }
+
+  override val volition: Volition = Voluntary
+}
+
+object FarmNoAction extends Action[facility.Farm] {
+
+  override val durationToComplete: Time = Minutes(0)
+  override val name: String = "No Action"
+  override val exclusive: Boolean = false
+  override val interruptable: Boolean = false
+
+  override def apply(entity: facility.Farm): facility.Farm = {
+    entity
   }
 
   override val volition: Volition = Voluntary

@@ -9,5 +9,5 @@ package object person {
     (Action[Commoner],
     (DateTime, Location, Commoner) => Boolean,
     Option[(Commoner, Location) => Option[Message]])]
-  type ReactionCandidates = List[(Reaction, (DateTime, Location, Commoner) => Boolean)]
+  type ReactionCandidates = List[(Reaction[Commoner], (DateTime, Location, Commoner) => Boolean)]
 }

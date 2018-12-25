@@ -12,7 +12,7 @@ import location.Location
 import message.MailboxTypes.{Inbox, Mailbox, Outbox}
 import message._
 import org.joda.time.DateTime
-import person.Handlers.{ReplyHandlers, emptyReplyHandler}
+import person.Handlers.{CommonerReplyHandlers, emptyReplyHandler}
 import resource.Calorie.calorie
 import resource.{Beans, FoodItemGroup, Meat, SimpleFood}
 import squants.energy.Energy
@@ -103,9 +103,9 @@ object TypicalTimes {
 }
 
 object Handlers {
-  type ReplyHandlers = Map[UUID, (Commoner => Commoner, Commoner => Commoner)]
+  type CommonerReplyHandlers = Map[UUID, (Commoner => Commoner, Commoner => Commoner)]
 
-  val emptyReplyHandler: ReplyHandlers = {
+  val emptyReplyHandler: CommonerReplyHandlers = {
     Map[UUID, (Commoner => Commoner, Commoner => Commoner)]()
   }
 }
@@ -123,10 +123,11 @@ case class Commoner(name: String,
                     actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
                     inbox: Inbox = Mailbox.empty,
                     outbox: Outbox = Mailbox.empty,
-                    replyHandlers: ReplyHandlers = emptyReplyHandler
+                    replyHandlers: CommonerReplyHandlers = emptyReplyHandler
                    )
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
+  import person.Handlers.CommonerReplyHandlers
 
   def handleRequest(req: Request[Commoner],
                     person: Commoner): (Commoner, Reply) = {
@@ -145,7 +146,7 @@ case class Commoner(name: String,
 
   def handleReply(reply: Reply,
                   person: Commoner,
-                  replyHandlers: ReplyHandlers): Commoner = {
+                  replyHandlers: CommonerReplyHandlers): Commoner = {
 
     replyHandlers.get(reply.uuid) match {
       case None => person
@@ -154,7 +155,7 @@ case class Commoner(name: String,
     }
   }
 
-  def processInbox(inbox: Inbox, person: Commoner, replyHandlers: ReplyHandlers): (Commoner, Outbox) = {
+  def processInbox(inbox: Inbox, entity: Commoner, replyHandlers: CommonerReplyHandlers): (Commoner, Outbox) = {
 
     @tailrec
     def go(inbox: Inbox, person: Commoner, outbox: Outbox): (Commoner, Outbox) = {
@@ -175,7 +176,7 @@ case class Commoner(name: String,
           }
       }
     }
-    val (processedPerson, outbox) = go(inbox, person, Mailbox.empty)
+    val (processedPerson, outbox) = go(inbox, entity, Mailbox.empty)
     (processedPerson.copy(inbox = Mailbox.empty), outbox)
   }
 
@@ -203,7 +204,7 @@ case class Commoner(name: String,
 
     val (inboxIncorporated, outbox) = processInbox(
       testInbox,
-      person = this,
+      entity = this,
       replyHandlers = replyHandlers
     )
 
@@ -238,7 +239,7 @@ case class Commoner(name: String,
           val msg = s"Person ${person.name} should perform ${possibleReaction.name} at time $datetime"
           println(msg)
         }
-        val action = if (shouldReact) possibleReaction else NoAction
+        val action = if (shouldReact) possibleReaction else CommonerNoAction
         performNextReaction(
           datetime, location,
           action(person),
@@ -285,7 +286,7 @@ case class Commoner(name: String,
     Action[Commoner], Option[Mailbox]
     ) = {
     candidates match {
-      case Nil => (NoAction, None)
+      case Nil => (CommonerNoAction, None)
       case (candidateAction, condition, interactionGenerator) :: remainingCandidates =>
         val shouldAct = condition(datetime, location, person)
         if (DEBUG && shouldAct) {
@@ -315,6 +316,8 @@ case class Commoner(name: String,
   override def receiveMessages(messages: Queue[Message]): Commoner = {
     this.copy(inbox = inbox ++ messages)
   }
+
+  override def handleRequest(req: Request[Entity], entity: Entity): (Entity, Reply) = ???
 }
 
 object Commoner {
