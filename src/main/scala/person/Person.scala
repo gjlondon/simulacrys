@@ -339,17 +339,15 @@ case class Commoner(name: String,
     this.copy(inbox = inbox ++ messages)
   }
 
-  def handleRequest(req: Request, entity: Entity): (Entity, Reply) = ???
-
   override def test(m: Person): Unit = ???
-
-  override def handleRequest(req: Request, Specific: Person): (Person, Reply) = ???
 
   override def requestSucceeds(payload: MessagePayload, Specific: Person): Boolean = ???
 
   override def onRequestSuccess(payload: MessagePayload, Specific: Person): Person = ???
 
   override def onRequestFailure(payload: MessagePayload, Specific: Person): Person = ???
+
+  override def handleRequest(req: Request, Specific: Person): (Person, Reply) = ???
 }
 
 object Commoner {

@@ -27,14 +27,14 @@ trait Entity {
   def update(time: DateTime, location: Location): Specific
   def receiveMessages(messages: Queue[Message]): Specific
   def handleRequest(req: Request,
-                    Specific: Specific): (Specific, Reply)
+                    specific: Specific): (Specific, Reply)
 
 
-  def requestSucceeds(payload: MessagePayload, Specific: Specific): Boolean
+  def requestSucceeds(payload: MessagePayload, specific: Specific): Boolean
 
-  def onRequestSuccess(payload: MessagePayload, Specific: Specific): Specific
+  def onRequestSuccess(payload: MessagePayload, specific: Specific): Specific
 
-  def onRequestFailure(payload: MessagePayload, Specific: Specific): Specific
+  def onRequestFailure(payload: MessagePayload, specific: Specific): Specific
 
 
 
