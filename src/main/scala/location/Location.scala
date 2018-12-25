@@ -1,5 +1,6 @@
 package location
 
+import entity.Entity
 import facility._
 import org.joda.time.DateTime
 import populace.Populace
@@ -36,6 +37,8 @@ sealed trait Location {
 
   val name: String
   val populace: Populace
+
+  val entities: Set[Entity] = populace ++ facilities
   def livingPopulace: Populace = populace.living
   def livingPopSize: Int = livingPopulace.size
   def withNewPopulace(populace: Populace): Location  // TODO maybe replace with a lens?
@@ -58,10 +61,10 @@ object City {
   }
   
   def typicalFacilities: Facilities = {
-    Map[FacilityGroup, List[Facility]](
-      Farms -> List(facility.Farm()),
-      Pastures -> List(facility.Pasture()),
-      Forests -> List(facility.Forest())
+    Facilities(
+      facility.Farm(),
+      facility.Pasture(),
+      facility.Forest()
     )
   }
 
@@ -87,10 +90,13 @@ object Manor {
   val typicalPopulation: Int = 15
 
   def typicalFacilities: Facilities = {
-    Map[FacilityGroup, List[Facility]](
-      Farms -> List(facility.Farm(), facility.Farm()),
-      Pastures -> List(facility.Pasture(), facility.Pasture()),
-      Forests -> List(facility.Forest(), facility.Forest())
+    Facilities(
+      facility.Farm(),
+      facility.Farm(),
+      facility.Pasture(),
+      facility.Pasture(),
+      facility.Forest(),
+      facility.Forest()
     )
   }
 }
@@ -115,10 +121,13 @@ object Farm {
   val typicalPopulation: Int = 10
 
   def typicalFacilities: Facilities = {
-    Map[FacilityGroup, List[Facility]](
-      Farms -> List(facility.Farm(), facility.Farm(), facility.Farm()),
-      Pastures -> List(facility.Pasture(), facility.Pasture(), facility.Pasture()),
-      Forests -> List(facility.Forest(), facility.Forest(), facility.Forest())
+    Facilities(
+      facility.Farm(),
+      facility.Farm(),
+      facility.Pasture(),
+      facility.Pasture(),
+      facility.Forest(),
+      facility.Forest()
     )
   }
 }

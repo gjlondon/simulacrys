@@ -1,12 +1,12 @@
 package world
 
+import convenienceTypes.ConvenienceTypes.VectorGrid
+import facility.Facilities
 import location._
+import org.joda.time.DateTime
 import populace.Populace
 
 import scala.util.Random
-import convenienceTypes.ConvenienceTypes.VectorGrid
-import facility.{Facility, FacilityGroup}
-import org.joda.time.DateTime
 
 class World private (startingGrid: Grid) {
   val grid: Grid = startingGrid
@@ -89,7 +89,7 @@ object Grid {
   def allFarms(startingTime: DateTime): Grid = {
     fillGrid {
       val farmName = LocationNames.nextName
-      val facilities = Map[FacilityGroup, List[Facility]]()
+      val facilities = Facilities(facility.Farm())
 
       Farm(
         farmName,
@@ -102,7 +102,7 @@ object Grid {
   def allCities(startingTime: DateTime): Grid = {
     fillGrid {
       val cityName = LocationNames.nextName
-      val facilities = Map[FacilityGroup, List[Facility]]()
+      val facilities = Facilities(facility.Farm())
 
       City(
         cityName,

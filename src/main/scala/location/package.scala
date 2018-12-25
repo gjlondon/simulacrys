@@ -1,5 +1,5 @@
 import facility.{Facility, FacilityGroup}
 
 package object location {
-  type Facilities = Map[FacilityGroup, List[Facility]]
+//  type Facilities = Map[FacilityGroup, List[Facility]]
 }

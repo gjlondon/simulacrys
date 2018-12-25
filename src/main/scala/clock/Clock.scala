@@ -5,6 +5,7 @@ import java.util.UUID
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration
 import constants.Constants.TICK_DURATION
+import facility.Facility
 import location.Location
 import message.MailboxTypes.Mailbox
 import message.{Mailbox, Message}
@@ -63,7 +64,7 @@ object Clock {
 
   def deliverMessagesToLocation(location: Location,
                                 messagesByRecipient: Map[UUID, Queue[Message]]): Location = {
-    val delivered = location.populace.par.map { p: Person =>
+    val deliveredPeople = location.populace.par.map { p: Person =>
       val messagesToPerson = messagesByRecipient.getOrElse(p.address, Queue[Message]())
       p.receiveMessages(messagesToPerson)
     }.seq.toSeq
