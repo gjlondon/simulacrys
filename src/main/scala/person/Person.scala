@@ -12,6 +12,7 @@ import location.Location
 import message.MailboxTypes.{Inbox, Mailbox, Outbox}
 import message._
 import org.joda.time.DateTime
+import person.Handlers.{ReplyHandlers, emptyReplyHandler}
 import resource.Calorie.calorie
 import resource.{Beans, FoodItemGroup, Meat, SimpleFood}
 import squants.energy.Energy
@@ -100,6 +101,14 @@ object TypicalTimes {
   val metabolismMinute = 0
 }
 
+object Handlers {
+  type ReplyHandlers = Map[UUID, (Commoner => Commoner, Commoner => Commoner)]
+
+  val emptyReplyHandler: ReplyHandlers = {
+    Map[UUID, (Commoner => Commoner, Commoner => Commoner)]()
+  }
+}
+
 case class Commoner(name: String,
                     inventory: FoodInventory,
                     gender: Gender,
@@ -113,12 +122,12 @@ case class Commoner(name: String,
                     actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
                     inbox: Inbox = Mailbox.empty,
                     outbox: Outbox = Mailbox.empty,
+                    replyHandlers: ReplyHandlers = emptyReplyHandler
                    )
   extends Person {
   import actions.CommonerActions.{candidateActions, involuntaryActions}
 
-
-  def handleNoteReq(req: Request[AnyRef, Commoner],
+  def handleRequest(req: Request[AnyRef, Commoner],
                     person: Commoner): (Commoner, Reply[Commoner, AnyRef]) = {
     val success = req.condition(person)
     val update = if(success) req.onSuccess else req.onFailure
@@ -133,6 +142,41 @@ case class Commoner(name: String,
     (updated, reply)
   }
 
+  def handleReply(reply: Reply[AnyRef, Commoner],
+                  person: Commoner,
+                  replyHandlers: ReplyHandlers): Commoner = {
+
+    replyHandlers.get(reply.uuid) match {
+      case None => person
+      case Some((onSuccess, onFailure)) =>
+        if (reply.succeeded) onSuccess(person) else onFailure(person)
+    }
+  }
+
+  def processInbox(inbox: Inbox, person: Commoner, replyHandlers: ReplyHandlers): (Commoner, Outbox) = {
+
+    @tailrec
+    def go(inbox: Inbox, person: Commoner, outbox: Outbox): (Commoner, Outbox) = {
+      inbox.dequeueOption match {
+        case None => (person, Mailbox.empty)
+        case Some((message, remaining)) =>
+          message match {
+            case req if classOf[Request[AnyRef, Commoner]].isInstance(req) =>
+              // safe to coerce because we've just checked the type compliance
+              val coercedReq = req.asInstanceOf[Request[AnyRef, Commoner]]
+              val (updated, reply) = handleRequest(coercedReq, person)
+              go(remaining, updated, outbox.enqueue(reply))
+            case rep if classOf[Reply[AnyRef, Commoner]].isInstance(rep) =>
+              // safe to coerce because we've just checked the type compliance
+              val coercedRep = rep.asInstanceOf[Reply[AnyRef, Commoner]]
+              val updated = handleReply(coercedRep, person, replyHandlers)
+              go(remaining, updated, outbox)
+          }
+      }
+    }
+    go(inbox, person, Mailbox.empty)
+  }
+
   def update(time: DateTime, location: Location): Commoner =  {
     val noOpNotReq = message.Request[Commoner, Commoner](
       from = this, to = this, condition = {
@@ -143,20 +187,7 @@ case class Commoner(name: String,
       onFailure = (c: Commoner) => c,
     )
 
-    val (updated, reply) = handleNoteReq(noOpNotReq, person = this)
-
-    val handlers = Map[UUID, (Commoner => Commoner, Commoner => Commoner)](
-      noOpNotReq.uuid -> (
-        (c: Commoner) => c,
-        (c: Commoner) => c,
-      )
-    )
-
-    val handled = handlers.get(reply.uuid) match {
-      case None => updated
-      case Some((onSuccess, onFailure)) =>
-        if (reply.succeeded) onSuccess (updated) else onFailure (updated)
-    }
+    val testInbox = inbox.enqueue(noOpNotReq).enqueue(noOpNotReq).enqueue(noOpNotReq)
 
     // 1. process all messages in inbox, updating state as necessary
 
@@ -167,7 +198,15 @@ case class Commoner(name: String,
     // 3. create a set of outgoing replies that respond to any income messages
     // (to allow senders to react to success or failure), or that initiate an
     // interaction with another entity
-    val afterReactions: Commoner = react(time, location)
+
+    val (inboxIncorporated, outbox) = processInbox(
+      testInbox,
+      person = this,
+      replyHandlers = replyHandlers
+    )
+
+
+    val afterReactions: Commoner = react(time, location, inboxIncorporated)
 
     // if person is not incapacitated, allow a voluntary action
     // by assumption, no action is allowed to take less than the length of a single tick
@@ -177,12 +216,12 @@ case class Commoner(name: String,
     afterActions.copy(asOf = time)
   }
 
-  private def react(time: DateTime, location: Location): Commoner = {
+  private def react(time: DateTime, location: Location, person: Commoner): Commoner = {
     // resolve involuntary actions
     // TODO add a concept of thirst
 
     performNextReaction(datetime = time, location = location,
-      person = this, reactions = involuntaryActions)
+      person = person, reactions = involuntaryActions)
   }
 
   @tailrec

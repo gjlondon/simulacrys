@@ -34,4 +34,8 @@ object Mailbox {
   def empty: Mailbox = {
     Queue[Message]()
   }
+
+  def from(message: Message): Mailbox = {
+    Queue[Message](message)
+  }
 }
