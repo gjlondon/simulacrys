@@ -129,11 +129,31 @@ case class Commoner(name: String,
   import actions.CommonerActions.{candidateActions, involuntaryActions}
   import person.Handlers.CommonerReplyHandlers
 
-  def handleRequest(req: Request[Commoner],
-                    person: Commoner): (Commoner, Reply) = {
-    val success = req.condition(person)
-    val update = if(success) req.onSuccess else req.onFailure
-    val updated: Commoner = update(person)
+  def requestSucceeds(payload: MessagePayload, entity: Commoner): Boolean = {
+    payload match {
+      case NoOp => true
+    }
+  }
+
+  def onRequestSuccess(payload: MessagePayload, entity: Commoner): Commoner = {
+    payload match {
+      case NoOp => entity
+    }
+  }
+
+  def onRequestFailure(payload: MessagePayload, entity: Commoner): Commoner = {
+    payload match {
+      case NoOp => entity
+    }
+  }
+
+  def handleRequest(req: Request,
+                    entity: Commoner): (Commoner, Reply) = {
+    val success = requestSucceeds(req.payload, entity)
+    val update: Commoner => Commoner = if(success)
+      onRequestSuccess(payload = req.payload, _)
+    else onRequestFailure(payload = req.payload, _)
+    val updated: Commoner = update(entity)
     val reply = Reply(
       from = updated.address,
       to = req.from,
@@ -163,10 +183,9 @@ case class Commoner(name: String,
         case None => (person, Mailbox.empty)
         case Some((message, remaining)) =>
           message match {
-            case req if classOf[Request[Commoner]].isInstance(req) =>
+            case req: Request =>
               // safe to coerce because we've just checked the type compliance
-              val coercedReq = req.asInstanceOf[Request[Commoner]]
-              val (updated, reply) = handleRequest(coercedReq, person)
+              val (updated, reply) = handleRequest(req, person)
               go(remaining, updated, outbox.enqueue(reply))
             case rep: Reply =>
               val updated = handleReply(rep, person, replyHandlers)
@@ -181,13 +200,15 @@ case class Commoner(name: String,
   }
 
   def update(time: DateTime, location: Location): Commoner =  {
-    val noOpNotReq = message.Request[Commoner](
-      from = this.address, to = this.address, condition = {
-        case _: Commoner => true
-        case _ => false
-      },
-      onSuccess = (c: Commoner) => c,
-      onFailure = (c: Commoner) => c,
+    val noOpNotReq = Request(
+      from = this.address, to = this.address,
+      payload = NoOp,
+      //      condition = {
+      //        case _: Farm => true
+      //        case _ => false
+      //      },
+      //      onSuccess = (c: Farm) => c,
+      //      onFailure = (c: Farm) => c,
     )
 
     val testInbox = inbox.enqueue(noOpNotReq).enqueue(noOpNotReq).enqueue(noOpNotReq)

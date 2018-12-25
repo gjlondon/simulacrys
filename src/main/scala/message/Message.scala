@@ -3,10 +3,13 @@ package message
 import java.util.UUID
 import java.util.UUID.randomUUID
 
-import entity.Entity
-
 import scala.collection.immutable.Queue
 
+sealed trait MessagePayload
+
+case object NoOp extends MessagePayload
+case object Reserve extends MessagePayload
+case object Release extends MessagePayload
 
 sealed trait Message {
   val uuid: UUID = randomUUID()
@@ -14,10 +17,7 @@ sealed trait Message {
   val to: UUID
 }
 
-case class Request[U <: Entity](from: UUID, to: UUID,
-                      condition: U => Boolean,
-                      onSuccess: U => U,
-                      onFailure: U => U) extends Message
+case class Request(from: UUID, to: UUID, payload: MessagePayload) extends Message
 
 case class Reply(re: UUID,
                  from: UUID,

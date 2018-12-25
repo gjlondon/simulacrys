@@ -88,13 +88,15 @@ case class Farm(capacity: Int = 2,
   override def update(time: DateTime,
                       location: Location): Farm = {
 
-    val noOpNotReq = message.Request[Farm](
-      from = this.address, to = this.address, condition = {
-        case _: Farm => true
-        case _ => false
-      },
-      onSuccess = (c: Farm) => c,
-      onFailure = (c: Farm) => c,
+    val noOpNotReq = Request(
+      from = this.address, to = this.address,
+      payload = NoOp,
+//      condition = {
+//        case _: Farm => true
+//        case _ => false
+//      },
+//      onSuccess = (c: Farm) => c,
+//      onFailure = (c: Farm) => c,
     )
 
     val testInbox = inbox.enqueue(noOpNotReq).enqueue(noOpNotReq).enqueue(noOpNotReq)
@@ -161,10 +163,8 @@ case class Farm(capacity: Int = 2,
         case None => (person, Mailbox.empty)
         case Some((message, remaining)) =>
           message match {
-            case req if classOf[Request[Farm]].isInstance(req) =>
-              // safe to coerce because we've just checked the type compliance
-              val coercedReq = req.asInstanceOf[Request[Farm]]
-              val (updated, reply) = handleRequest(coercedReq, person)
+            case req: Request =>
+              val (updated, reply) = handleRequest(req, person)
               go(remaining, updated, outbox.enqueue(reply))
             case rep: Reply =>
               val updated = handleReply(rep, person, replyHandlers)
