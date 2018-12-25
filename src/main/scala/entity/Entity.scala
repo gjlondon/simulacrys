@@ -25,12 +25,27 @@ trait Entity {
 
   val inbox: Queue[Message]
   val outbox: Queue[Message]
+  val replyHandlers: ReplyHandlers
 
   def update(time: DateTime, location: Location): Specific
   def receiveMessages(messages: Queue[Message]): Specific
-  def handleRequest(req: Request,
-                    specific: Specific): (Specific, Reply)
 
+  def handleRequest(req: Request,
+                    entity: Specific): (Specific, Reply) = {
+    val success = requestSucceeds(req.payload, entity)
+    val update: Specific => Specific = if(success)
+      onRequestSuccess(payload = req.payload, _)
+    else onRequestFailure(payload = req.payload, _)
+    val updated: Specific = update(entity)
+    val reply = Reply(
+      from = updated.address,
+      to = req.from,
+      succeeded = success,
+      re = req.uuid
+    )
+
+    (updated, reply)
+  }
 
   def requestSucceeds(payload: MessagePayload, specific: Specific): Boolean
 
@@ -39,8 +54,7 @@ trait Entity {
   def onRequestFailure(payload: MessagePayload, specific: Specific): Specific
 
   def handleReply(reply: Reply,
-                  entity: Specific,
-                  replyHandlers: ReplyHandlers): Specific = {
+                  entity: Specific): Specific = {
 
     replyHandlers.get(reply.uuid) match {
       case None => entity
@@ -49,9 +63,10 @@ trait Entity {
     }
   }
 
-  def processInbox(inbox: Inbox,
-                   entity: Specific,
-                   replyHandlers: ReplyHandlers): (Specific, Outbox) = {
+  def handleInbox(entity: Specific): (Specific, Outbox)
+
+  def consumeInbox(inbox: Inbox,
+                   entity: Specific): (Specific, Outbox) = {
 
     @tailrec
     def go(inbox: Inbox, entity: Specific, outbox: Outbox): (Specific, Outbox) = {
@@ -64,7 +79,7 @@ trait Entity {
               val (updated, reply) = handleRequest(req, entity)
               go(remaining, updated, outbox.enqueue(reply))
             case rep: Reply =>
-              val updated = handleReply(rep, entity, replyHandlers)
+              val updated = handleReply(rep, entity)
               go(remaining, updated, outbox)
             // this probably shouldn't happen:
             case _ => (entity, Mailbox.empty)
@@ -72,7 +87,6 @@ trait Entity {
       }
     }
     val (processedPerson, outbox) = go(inbox, entity, Mailbox.empty)
-    // TODO put back inbox emptying
     (processedPerson, outbox)
   }
 

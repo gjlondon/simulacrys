@@ -130,6 +130,15 @@ case class Commoner(name: String,
   import actions.CommonerActions.{candidateActions, involuntaryActions}
   import person.Handlers.CommonerReplyHandlers
 
+  override def receiveMessages(messages: Queue[Message]): Commoner = {
+    this.copy(inbox = inbox ++ messages)
+  }
+
+  override def handleInbox(entity: Commoner): (Commoner, Outbox) = {
+    val (updatedEntity, outbox) = consumeInbox(inbox = entity.inbox, entity = entity)
+    (updatedEntity.copy(inbox = Mailbox.empty), outbox)
+  }
+
   def requestSucceeds(payload: MessagePayload, entity: Commoner): Boolean = {
     payload match {
       case NoOp => true
@@ -146,23 +155,6 @@ case class Commoner(name: String,
     payload match {
       case NoOp => entity
     }
-  }
-
-  def handleRequest(req: Request,
-                    entity: Commoner): (Commoner, Reply) = {
-    val success = requestSucceeds(req.payload, entity)
-    val update: Commoner => Commoner = if(success)
-      onRequestSuccess(payload = req.payload, _)
-    else onRequestFailure(payload = req.payload, _)
-    val updated: Commoner = update(entity)
-    val reply = Reply(
-      from = updated.address,
-      to = req.from,
-      succeeded = success,
-      re = req.uuid
-    )
-
-    (updated, reply)
   }
 
   def update(time: DateTime, location: Location): Commoner =  {
@@ -189,10 +181,8 @@ case class Commoner(name: String,
     // (to allow senders to react to success or failure), or that initiate an
     // interaction with another entity
 
-    val (inboxIncorporated, outbox) = processInbox(
-      testInbox,
-      entity = this,
-      replyHandlers = replyHandlers
+    val (inboxIncorporated, outbox) = handleInbox(
+      entity = this.copy(inbox = testInbox),
     )
 
 
@@ -269,10 +259,6 @@ case class Commoner(name: String,
           remainingCandidates,
         )
     }
-  }
-
-  override def receiveMessages(messages: Queue[Message]): Commoner = {
-    this.copy(inbox = inbox ++ messages)
   }
 }
 

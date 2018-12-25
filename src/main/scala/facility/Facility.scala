@@ -3,7 +3,6 @@ package facility
 import java.util.UUID
 
 import actions._
-import configuration.Configuration.DEBUG
 import entity.Entity
 import facility.Handlers.FarmReplyHandlers
 import location.Location
@@ -11,7 +10,6 @@ import message.MailboxTypes.{Inbox, Outbox}
 import message._
 import org.joda.time.DateTime
 
-import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 
 sealed trait Facility extends Entity {
@@ -23,7 +21,6 @@ sealed trait Facility extends Entity {
 
   def reserve: Specific
   def release: Specific
-  override def receiveMessages(messages: Queue[Message]): Specific
 
 
 //  override def update(time: DateTime,
@@ -103,15 +100,20 @@ case class Pasture(capacity: Int = 3,
   // override val replyHandlers: ReplyHandlers = emptyPastureReplyHandler
   override val replyHandlers: ReplyHandlers = emptyPastureReplyHandler
 
-  override def reserve: Pasture = ???
+  override def reserve: Pasture = this.copy(capacity = capacity - 1)
 
-  override def release: Pasture = ???
+  override def release: Pasture = this.copy(capacity = capacity + 1)
 
-  override def receiveMessages(messages: Queue[Message]): Pasture = ???
+  override def receiveMessages(messages: Queue[Message]): Pasture = {
+    this.copy(inbox = inbox ++ messages)
+  }
+
+  override def handleInbox(entity: Pasture): (Pasture, Outbox) = {
+    val (updatedEntity, outbox) = consumeInbox(inbox = entity.inbox, entity = entity)
+    (updatedEntity.copy(inbox = Mailbox.empty), outbox)
+  }
 
   override def update(time: DateTime, location: Location): Pasture = ???
-
-  override def handleRequest(req: Request, Specific: Pasture): (Pasture, Reply) = ???
 
   override def requestSucceeds(payload: MessagePayload, Specific: Pasture): Boolean = ???
 
@@ -123,10 +125,10 @@ case class Pasture(capacity: Int = 3,
 case class Farm(capacity: Int = 2,
                 inbox: Inbox = Mailbox.empty,
                 outbox: Outbox = Mailbox.empty,
-                replyHandlers: FarmReplyHandlers = emptyFarmReplyHandler
                )
   extends Facility {
   override type Specific = Farm
+  val replyHandlers: FarmReplyHandlers = emptyFarmReplyHandler
   val grouping: Farms.type = Farms
   override def reserve: Farm = this.copy(capacity = capacity - 1)
 
@@ -134,6 +136,11 @@ case class Farm(capacity: Int = 2,
 
   override def receiveMessages(messages: Queue[Message]): Farm = {
     this.copy(inbox = inbox ++ messages)
+  }
+
+  override def handleInbox(entity: Farm): (Farm, Outbox) = {
+    val (updatedEntity, outbox) = consumeInbox(inbox = entity.inbox, entity = entity)
+    (updatedEntity.copy(inbox = Mailbox.empty), outbox)
   }
 
   override def update(time: DateTime,
@@ -162,12 +169,9 @@ case class Farm(capacity: Int = 2,
     // (to allow senders to react to success or failure), or that initiate an
     // interaction with another entity
 
-    val (inboxIncorporated, outbox) = processInbox(
-      testInbox,
-      entity = this,
-      replyHandlers = replyHandlers
+    val (inboxIncorporated, outbox) = handleInbox(
+      entity = this.copy(inbox = testInbox),
     )
-
 
     val afterReactions: Farm = react(time, location, inboxIncorporated)
 
@@ -197,27 +201,8 @@ case class Farm(capacity: Int = 2,
     }
   }
 
-  def handleRequest(req: Request,
-                    entity: Farm): (Farm, Reply) = {
-    val success = requestSucceeds(req.payload, entity)
-    val update: Farm => Farm = if(success)
-      onRequestSuccess(payload = req.payload, _)
-    else onRequestFailure(payload = req.payload, _)
-    val updated: Farm = update(entity)
-    val reply = Reply(
-      from = updated.address,
-      to = req.from,
-      succeeded = success,
-      re = req.uuid
-    )
-
-    (updated, reply)
-  }
-
   override val involuntaryActions: ReactionCandidates = List()
   override type ReactionCandidates = List[(Reaction[Specific], (DateTime, Location, Specific) => Boolean)]
-
-
 }
 
 case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
@@ -235,17 +220,21 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
     this.copy(inbox = inbox ++ messages)
   }
 
+  override def handleInbox(entity: Forest): (Forest, Outbox) = {
+    val (updatedEntity, outbox) = consumeInbox(inbox = entity.inbox, entity = entity)
+    (updatedEntity.copy(inbox = Mailbox.empty), outbox)
+  }
+
   override def update(time: DateTime, location: Location): Forest = ???
 
   override val replyHandlers: ReplyHandlers = emptyForestReplyHandler
-
-  override def handleRequest(req: Request, Specific: Forest): (Forest, Reply) = ???
 
   override def requestSucceeds(payload: MessagePayload, Specific: Forest): Boolean = ???
 
   override def onRequestSuccess(payload: MessagePayload, Specific: Forest): Forest = ???
 
   override def onRequestFailure(payload: MessagePayload, Specific: Forest): Forest = ???
+
 }
 
 
