@@ -1,5 +1,7 @@
 package person
 
+import java.util.UUID
+
 import actions._
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration.DEBUG
@@ -151,6 +153,52 @@ case class Commoner(name: String,
     else reply.onFailure(person)
   }
 
+//  def handleMsg[T](msg: Msg[T, Commoner],
+//                person: Commoner): (Commoner, Option[Msg[Commoner, T]]) = {
+//    val success = msg.condition(person)
+//
+//    val replyMsg = message.NoteRequest[Commoner, T](
+//      from = this, to = _, condition = {
+//        case _: Commoner => true
+//        case _ => false
+//      },
+//      onSuccess = {
+//        case c: Commoner => Some(c)
+//        case _ => None
+//      },
+//      onFailure = {
+//        case c: Commoner => Some(c)
+//        case _ => None
+//      }
+//    )
+//
+//    val (update, reply) = if(success) {
+//      (msg.onSuccess, replyMsg)
+//    } else {
+//      (msg.onFailure, replyMsg)
+//    }
+//    val updated = update(person) match {
+//      case None => person
+//      case Some(p) => p
+//    }
+//    (updated, Some(reply))
+//  }
+
+  def handleNoteReq(req: NoteRequest[AnyRef, Commoner],
+                    person: Commoner): (Commoner, NoteReply[Commoner, AnyRef]) = {
+    val success = req.condition(person)
+    val update = if(success) req.onSuccess else req.onFailure
+    val updated = update(person)
+    val reply = NoteReply[Commoner, AnyRef](
+      from = updated,
+      to = req.from,
+      succeeded = success,
+      re = req.uuid
+    )
+
+    (updated, reply)
+  }
+
   def update(time: DateTime, location: Location): Commoner =  {
     val noOpRequest = message.Request[Commoner, Commoner](
       from = this, to = this, condition = _ => true, effect = c => c,
@@ -163,6 +211,55 @@ case class Commoner(name: String,
         case _ => None
       }
     )
+
+//    val noOpMsg = message.Msg[Commoner, Commoner](
+//      from = this, to = this, condition = {
+//        case _: Commoner => true
+//        case _ => false
+//      },
+//      onSuccess = {
+//        case c: Commoner => Some(c)
+//        case _ => None
+//      },
+//      onFailure = {
+//        case c: Commoner => Some(c)
+//        case _ => None
+//      }
+//    )
+
+    val noOpNotReq = message.NoteRequest[Commoner, Commoner](
+      from = this, to = this, condition = {
+        case _: Commoner => true
+        case _ => false
+      },
+      onSuccess = (c: Commoner) => c,
+      onFailure = (c: Commoner) => c,
+    )
+
+    val (updated, reply) = handleNoteReq(noOpNotReq, person = this)
+
+    val handlers = Map[UUID, (Commoner => Commoner, Commoner => Commoner)](
+      noOpNotReq.uuid -> (
+        (c: Commoner) => c,
+        (c: Commoner) => c,
+      )
+    )
+
+    val handled = handlers.get(reply.uuid) match {
+      case None => updated
+      case Some((onSuccess, onFailure)) =>
+        if (reply.succeeded) onSuccess (updated) else onFailure (updated)
+    }
+
+//    val (updated, reply) = handleMsg(noOpMsg, person = this)
+//
+//    val (updated2, reply2) = reply match {
+//      case None => (updated, None)
+//      case Some(msg) => handleMsg(msg, person = updated)
+//    }
+
+
+
     val noOpReply = message.Reply[Commoner, Commoner](
       from = this, to = this, succeeded = true,
       onSuccess = (c: Commoner) => c, onFailure = (c: Commoner) => c

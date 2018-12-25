@@ -1,9 +1,12 @@
 package message
 
+import java.util.UUID
+
 import actions.Interaction
 import entity.Entity
 import facility.Facility
 import person.Commoner
+import java.util.UUID.randomUUID
 
 import scala.collection.immutable.Queue
 import scala.reflect.ClassTag
@@ -13,6 +16,31 @@ sealed trait Message[+T <: Entity, U <: Entity, +V <: Entity] {
   val to: U
   val payload: Interaction[T, U, V]
 }
+
+case class Msg[+T: ClassTag, +U: ClassTag](from: T, to: U,
+                      condition: PartialFunction[AnyRef, Boolean],
+                      onSuccess: PartialFunction[AnyRef, Option[U]],
+                      onFailure: PartialFunction[AnyRef, Option[U]],
+                      success: Option[Boolean] = None,
+                     )
+
+sealed trait Note[+T, +U] {
+  val uuid: UUID = randomUUID()
+  val from: T
+  val to: U
+}
+
+case class NoteRequest[+T, U](from: T, to: U,
+                              condition: U => Boolean,
+                              onSuccess: U => U,
+                              onFailure: U => U) extends Note[T, U]
+
+case class NoteReply[T: ClassTag, U: ClassTag](re: UUID,
+                                               from: T,
+                                               to: U,
+                                               succeeded: Boolean) extends Note[T, U]
+
+
 
 sealed trait ReqRep
 
