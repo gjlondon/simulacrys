@@ -311,18 +311,4 @@ object CommonerActions {
 //    }
 //
 //  }
-
-  val candidateActions: ActionCandidates = List(
-
-    (Eat, shouldEat, None),
-    (Farm, shouldFarm, None), // Some(farmInteraction)),
-//    ("relax", relax, shouldRelax),
-//    ("procreate", procreate, shouldProcreate),
-    (Sleep, shouldSleep, None)
-  )
-
-  val involuntaryActions: ReactionCandidates = List(
-    (Metabolize, shouldMetabolize),
-    (TransitionHealth, shouldTransitionHealth)
-  )
 }

@@ -2,6 +2,7 @@ package person
 
 import java.util.UUID
 
+import actions.CommonerActions._
 import actions._
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration.DEBUG
@@ -127,7 +128,6 @@ case class Commoner(name: String,
   extends Person {
   override type Specific = Commoner
 
-  import actions.CommonerActions.{candidateActions, involuntaryActions}
   import person.Handlers.CommonerReplyHandlers
 
   override def receiveMessages(messages: Queue[Message]): Commoner = {
@@ -260,6 +260,20 @@ case class Commoner(name: String,
         )
     }
   }
+
+  val candidateActions: ActionCandidates = List(
+
+    (Eat, shouldEat, None),
+    (Farm, shouldFarm, None), // Some(farmInteraction)),
+    //    ("relax", relax, shouldRelax),
+    //    ("procreate", procreate, shouldProcreate),
+    (Sleep, shouldSleep, None)
+  )
+
+  override val involuntaryActions: ReactionCandidates = List(
+    (Metabolize, shouldMetabolize),
+    (TransitionHealth, shouldTransitionHealth)
+  )
 }
 
 object Commoner {
