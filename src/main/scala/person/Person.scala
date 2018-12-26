@@ -3,19 +3,22 @@ package person
 import java.util.UUID
 
 import actions.CommonerActions._
+import actions.Farm.addProduceToInventory
+import actions.TransitionHealth.transitionHealth
 import actions._
 import com.github.nscala_time.time.Imports._
-import configuration.Configuration.DEBUG
+import constants.Constants.ENERGY_PER_KILO_OF_FAT
 import demographic._
 import entity.Entity
 import inventory.FoodInventory
 import location.Location
+import meal.Meal
 import message.MailboxTypes.{Inbox, Mailbox, Outbox}
 import message._
 import org.joda.time.DateTime
 import person.Handlers.{CommonerReplyHandlers, emptyReplyHandler}
 import resource.Calorie.calorie
-import resource.{Beans, FoodItemGroup, Meat, SimpleFood}
+import resource.{Old => _, _}
 import squants.energy.Energy
 import squants.mass._
 import squants.motion.Distance
@@ -25,6 +28,12 @@ import status._
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import scala.util.Random
+
+object LocalConfig {
+  val DEBUG = false
+}
+
+import actions.LocalConfig.DEBUG
 
 sealed trait WeightStatus
 
@@ -120,15 +129,14 @@ case class Commoner(name: String,
                     birthDate: DateTime,
                     health: HealthStatus = Fine,
                     currentActivity: CurrentActivity = Idle,
-                    actionQueue: Queue[Action[Commoner]] = Queue.empty[Action[Commoner]],
+                    actionQueue: Queue[PersonAction] = Queue[PersonAction](),
                     inbox: Inbox = Mailbox.empty,
                     outbox: Outbox = Mailbox.empty,
                     replyHandlers: CommonerReplyHandlers = emptyReplyHandler
                    )
   extends Person {
   override type Specific = Commoner
-
-  import person.Handlers.CommonerReplyHandlers
+  override type RelevantAction = PersonAction
 
   override def receiveMessages(messages: Queue[Message]): Commoner = {
     this.copy(inbox = inbox ++ messages)
@@ -221,7 +229,9 @@ case class Commoner(name: String,
     val (nextPerson, nextActivity) =
       if (progressed.isComplete) {
         if (DEBUG) println(s"$performance complete")
-        (progressed.perform(person = person), Idle)
+        // TODO handle outbox
+        val (updated, outbox) = initiateAction(progressed.perform, person)
+        (updated, Idle)
       }
       else (person, progressed)
     nextPerson.copy(currentActivity = nextActivity)
@@ -231,7 +241,7 @@ case class Commoner(name: String,
   private def selectAction(datetime: DateTime, location: Location,
                            person: Commoner,
                            candidates: ActionCandidates): (
-    Action[Commoner], Option[Mailbox]
+    PersonAction, Option[Mailbox]
     ) = {
     candidates match {
       case Nil => (CommonerNoAction, None)
@@ -274,6 +284,119 @@ case class Commoner(name: String,
     (Metabolize, shouldMetabolize),
     (TransitionHealth, shouldTransitionHealth)
   )
+
+  import LocalConfig.DEBUG
+  override def initiateAction(action: PersonAction, entity: Commoner): (Commoner, Outbox) = {
+    action match {
+      case Farm => doFarm(entity)
+      case Metabolize => doMetabolize(entity)
+      case TransitionHealth => doTransitionHealth(entity)
+      case CommonerNoAction => (entity, Mailbox.empty)
+      case Eat => doEat(entity)
+      case Sleep => doSleep(entity)
+    }
+  }
+
+  private def doSleep(entity: Commoner): (Commoner, Mailbox) = {
+    (entity, Mailbox.empty)
+  }
+
+  private def doEat(entity: Commoner): (Commoner, Mailbox) = {
+
+    val meal = Meal.cheapestMeal(
+      candidateComponents = entity.inventory,
+      requiredEnergy = entity.foodEnergyRequired
+    )
+
+    meal match {
+      case None =>
+        if (DEBUG) {
+          println(s"No meal could be constructed from ${entity.inventory}")
+        }
+        (entity, Mailbox.empty)
+      case Some(eatenMeal) =>
+        val fatGained = eatenMeal.energy / ENERGY_PER_KILO_OF_FAT
+        val newBodyFat = entity.availableBodyFat + fatGained
+        val newInventory = entity.inventory.deductMeal(eatenMeal)
+
+        if (DEBUG) println(f"Yum meal for ${entity.name} ${eatenMeal.kilocalories}%1.3f new fat $fatGained to reach $newBodyFat." +
+          f"Remaining inventory has ${newInventory.totalAvailableCalories}%1.3f")
+
+        val updated = entity.copy(
+          inventory = newInventory,
+          availableBodyFat = newBodyFat
+        )
+        (updated, Mailbox.empty)
+    }
+
+  }
+
+  private def doFarm(entity: Commoner): (Commoner, Mailbox) = {
+
+    /**
+      * People can take advantage of local available arable land to produce a certain quantity of
+      * crops and/or live stock.
+      **
+      * We'd like to be able to select a subset of possible crops ot farm, and then randomly generate a crop yield
+      * amount based on a distribution that is specific to each type of crop. Ideally we could create a "yield map"
+      * which would map from Type to Yield amount.
+      **
+      * Ideally farms would have some degree of persistence so that we could model the fact that growing crops inevitably takes
+      * time, but maybe that's a future feature.
+      *
+      */
+
+    val cropToFarm: SimpleFood = SimpleFood.randomCrop()
+
+    val cropYield: Int = cropToFarm.randomYield
+    val produce = FoodItemGroup(Map[Freshness, Int](Fresh -> cropYield), sku = cropToFarm)
+
+    val newInventory = addProduceToInventory(produce = produce, inventory = entity.inventory,
+      cropToFarm = cropToFarm)
+    if (DEBUG) {
+      println(s"Yield $produce")
+      println(s"old inventory ${entity.name} ${entity.inventory.contents.get(cropToFarm)}; new inventory ${newInventory.contents.get(cropToFarm)}")
+    }
+    (entity.copy(inventory = newInventory), Mailbox.empty)
+  }
+
+  private def doTransitionHealth(entity: Commoner): (Commoner, Mailbox) = {
+
+    val (worseChance, betterChance) = HealthStatus.transitionProbabilities(entity.ageBracket)
+
+    val nextHealth = transitionHealth(worseChance = worseChance,
+      betterChance = betterChance,
+      starting = entity.health)
+
+    if (nextHealth == Dead) println(s"${entity.name} died in a health event")
+    val updated = entity.copy(
+      health = nextHealth
+    )
+    (updated, Mailbox.empty)
+
+  }
+
+  private def doMetabolize(entity: Commoner): (Commoner, Mailbox) = {
+
+    val fatBurned = entity.foodEnergyRequired / ENERGY_PER_KILO_OF_FAT
+
+    val updatedBodyFat = entity.availableBodyFat - fatBurned
+    val updatedHealth = if (updatedBodyFat <= Kilograms(0)) {
+      if (DEBUG) {
+        println(s"${entity.name} died because body fat fell to $updatedBodyFat")
+      }
+      Dead
+    } else entity.health
+
+    if (updatedHealth == Dead) println(s"${entity.name} died from starvation")
+
+    val updated = entity.copy(
+      availableBodyFat = updatedBodyFat,
+      health = updatedHealth
+    )
+    (updated, Mailbox.empty)
+
+  }
 }
 
 object Commoner {

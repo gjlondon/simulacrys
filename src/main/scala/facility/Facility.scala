@@ -94,6 +94,7 @@ case class Pasture(capacity: Int = 3,
                   )
   extends Facility {
   override type Specific = Pasture
+  override type RelevantAction = PastureAction
   val grouping: Pastures.type = Pastures
 
 
@@ -120,6 +121,8 @@ case class Pasture(capacity: Int = 3,
   override def onRequestSuccess(payload: MessagePayload, Specific: Pasture): Pasture = ???
 
   override def onRequestFailure(payload: MessagePayload, Specific: Pasture): Pasture = ???
+
+  override def initiateAction(action: PastureAction, entity: Pasture): (Pasture, Outbox) = ???
 }
 
 case class Farm(capacity: Int = 2,
@@ -128,6 +131,7 @@ case class Farm(capacity: Int = 2,
                )
   extends Facility {
   override type Specific = Farm
+  override type RelevantAction = FarmAction
   val replyHandlers: FarmReplyHandlers = emptyFarmReplyHandler
   val grouping: Farms.type = Farms
   override def reserve: Farm = this.copy(capacity = capacity - 1)
@@ -201,8 +205,7 @@ case class Farm(capacity: Int = 2,
     }
   }
 
-  override val involuntaryActions: ReactionCandidates = List()
-  override type ReactionCandidates = List[(Reaction[Specific], (DateTime, Location, Specific) => Boolean)]
+  override def initiateAction(action: FarmAction, entity: Farm): (Farm, Outbox) = ???
 }
 
 case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
@@ -211,6 +214,7 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
   extends Facility {
   override type Specific = Forest
   val grouping: Forests.type = Forests
+  override type RelevantAction = ForestAction
 
   override def reserve: Forest = this.copy(capacity = capacity - 1)
 
@@ -235,6 +239,7 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
 
   override def onRequestFailure(payload: MessagePayload, Specific: Forest): Forest = ???
 
+  override def initiateAction(action: ForestAction, entity: Forest): (Forest, Outbox) = ???
 }
 
 

@@ -20,6 +20,7 @@ trait Entity {
     * process and respond to before taking an "voluntary" actions
     */
   type Specific <: Entity
+  type RelevantAction <: Action
   type ReplyHandlers = Map[UUID, (Specific => Specific, Specific => Specific)]
   val address: UUID = randomUUID()
 
@@ -29,6 +30,10 @@ trait Entity {
 
   def update(time: DateTime, location: Location): Specific
   def receiveMessages(messages: Queue[Message]): Specific
+  def requestSucceeds(payload: MessagePayload, specific: Specific): Boolean
+  def onRequestSuccess(payload: MessagePayload, specific: Specific): Specific
+  def onRequestFailure(payload: MessagePayload, specific: Specific): Specific
+  def initiateAction(action: RelevantAction, entity: Specific): (Specific, Outbox)
 
   def handleRequest(req: Request,
                     entity: Specific): (Specific, Reply) = {
@@ -46,12 +51,6 @@ trait Entity {
 
     (updated, reply)
   }
-
-  def requestSucceeds(payload: MessagePayload, specific: Specific): Boolean
-
-  def onRequestSuccess(payload: MessagePayload, specific: Specific): Specific
-
-  def onRequestFailure(payload: MessagePayload, specific: Specific): Specific
 
   def handleReply(reply: Reply,
                   entity: Specific): Specific = {
@@ -99,7 +98,7 @@ trait Entity {
   }
 
   val involuntaryActions: ReactionCandidates = List()
-  type ReactionCandidates = List[(Reaction[Specific], (DateTime, Location, Specific) => Boolean)]
+  type ReactionCandidates = List[(RelevantAction, (DateTime, Location, Specific) => Boolean)]
 
   def performNextReaction(datetime: DateTime, location: Location,
                                   entity: Specific,
@@ -109,15 +108,17 @@ trait Entity {
       case (possibleReaction, condition) :: remainingCandidates =>
         val shouldReact = condition(datetime, location, entity)
 
-        val action: Action[Specific] = possibleReaction
+        val action: RelevantAction = possibleReaction
         // TODO fix noAction
-        //        if (shouldReact) possibleReaction else {
-        //          val noAction: Action[Specific] = FacilityNoAction()
-        //          noAction
-        //        }
+//                if (shouldReact) possibleReaction else {
+//                  val noAction: Action = FacilityNoAction()
+//                  noAction
+//                }
+        // TODO handle outbox stemming from reactions
+        val (updated, outbox) = initiateAction(action, entity)
         performNextReaction(
           datetime, location,
-          action(entity),
+          updated,
           remainingCandidates,
         )
     }

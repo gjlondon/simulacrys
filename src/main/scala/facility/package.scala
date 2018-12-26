@@ -5,8 +5,7 @@ import org.joda.time.DateTime
 
 package object facility {
   type ActionCandidates = List[
-    (Action[Farm],
+    (Action,
       (DateTime, Location, Farm) => Boolean,
       Option[(Farm, Location) => Option[Message]])]
-  type ReactionCandidates = List[(Reaction[Farm], (DateTime, Location, Farm) => Boolean)]
 }

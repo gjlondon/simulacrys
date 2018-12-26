@@ -1,4 +1,4 @@
-import actions.{Action, Reaction}
+import actions.{Action, PersonAction, Reaction}
 import location.Location
 import message.Message
 import org.joda.time.DateTime
@@ -6,8 +6,7 @@ import org.joda.time.DateTime
 package object person {
 
   type ActionCandidates = List[
-    (Action[Commoner],
+    (PersonAction,
     (DateTime, Location, Commoner) => Boolean,
     Option[(Commoner, Location) => Option[Message]])]
-  type ReactionCandidates = List[(Reaction[Commoner], (DateTime, Location, Commoner) => Boolean)]
 }
