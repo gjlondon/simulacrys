@@ -91,7 +91,7 @@ trait Entity {
     (processedPerson, outbox)
   }
 
-  def react(time: DateTime, location: Location, entity: Specific): Specific = {
+  def react(time: DateTime, location: Location, entity: Specific): (Specific, Outbox) = {
     // resolve involuntary actions
     // TODO add a concept of thirst
 
@@ -101,19 +101,27 @@ trait Entity {
 
   def performNextReaction(datetime: DateTime, location: Location,
                                   entity: Specific,
-                                  reactions: ReactionCandidates): Specific = {
-    reactions match {
-      case Nil => entity
-      case (possibleReaction, condition) :: remainingCandidates =>
-        val shouldReact = condition(datetime, location, entity)
-        val action: RelevantAction = if (shouldReact) possibleReaction else NoAction
-        // TODO handle outbox stemming from reactions
-        val (updated, outbox) = initiateAction(action, entity)
-        performNextReaction(
-          datetime, location,
-          updated,
-          remainingCandidates,
-        )
+                                  reactions: ReactionCandidates): (Specific, Outbox) = {
+
+    @tailrec
+    def go(entity: Specific,
+           reactions: ReactionCandidates,
+           acc: Outbox): (Specific, Outbox) = {
+      reactions match {
+        case Nil => (entity, Mailbox.empty)
+        case (possibleReaction, condition) :: remainingCandidates =>
+          val shouldReact = condition(datetime, location, entity)
+          val action: RelevantAction = if (shouldReact) possibleReaction else NoAction
+          val (updated, outbox) = initiateAction(action, entity)
+          go(
+            entity = updated,
+            reactions = remainingCandidates,
+            acc = acc ++ outbox
+          )
+      }
+
     }
+    val (processedPerson, outbox) = go(entity, reactions, Mailbox.empty)
+    (processedPerson, outbox)
   }
 }

@@ -179,13 +179,14 @@ case class Farm(capacity: Int = 2,
       entity = this.copy(inbox = testInbox),
     )
 
-    val afterReactions: Farm = react(time, location, inboxIncorporated)
+    val (afterReactions, reactedOutbox) = react(time, location, inboxIncorporated)
+
 
     // if entity is not incapacitated, allow a voluntary action
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a entity will take at most one action
 
-    afterReactions.copy(outbox = outbox)
+    afterReactions.copy(outbox = reactedOutbox)
   }
 
 

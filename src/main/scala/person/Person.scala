@@ -193,25 +193,24 @@ case class Commoner(name: String,
       entity = this.copy(inbox = testInbox),
     )
 
-
-    val afterReactions: Commoner = react(time, location, inboxIncorporated)
+    val (afterReactions: Commoner, reactedOutbox: Outbox) = react(time, location, inboxIncorporated)
 
     // if person is not incapacitated, allow a voluntary action
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
-    val afterActions = act(time, location, afterReactions)
+    val (afterActions, actedOutbox) = act(time, location, afterReactions)
 
-    afterActions.copy(asOf = time, outbox = outbox)
+    afterActions.copy(asOf = time, outbox = actedOutbox)
   }
 
-  def act(time: DateTime, location: Location, person: Commoner): Commoner =  {
+  def act(time: DateTime, location: Location, person: Commoner): (Commoner, Outbox) =  {
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
 
     person.currentActivity match {
       case Incapacitated =>
         if (DEBUG) println(s"${person.name} incapacit")
-        person
+        (person, person.outbox)
       case performance: CommonerPerformance =>
         if (DEBUG) println(s"${person.name} still working on $performance, ticks remaining ${performance.ticksRemaining}")
         perform(performance, person = person)
@@ -287,6 +286,7 @@ case class Commoner(name: String,
 
   import LocalConfig.DEBUG
   override def initiateAction(action: PersonAction, entity: Commoner): (Commoner, Outbox) = {
+    if (DEBUG && action != PersonNoAction) println(action)
     action match {
       case Farm => doFarm(entity)
       case Metabolize => doMetabolize(entity)
