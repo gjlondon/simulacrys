@@ -13,11 +13,11 @@ sealed trait Performance[T <: Commoner] extends CurrentActivity {
   def ticksRemaining: Int = perform.ticksRequired - ticksElapsed
   def isComplete: Boolean = ticksRemaining <= 0
 
-  def progress: Performance[T]
+  def advanceByTick: Performance[T]
 }
 
 case class CommonerPerformance(perform: PersonAction,
                                ticksElapsed: Int = 0)
   extends Performance[Commoner] {
-  override def progress: Performance[Commoner] = this.copy(ticksElapsed = this.ticksElapsed + 1)
+  override def advanceByTick: Performance[Commoner] = this.copy(ticksElapsed = this.ticksElapsed + 1)
 }

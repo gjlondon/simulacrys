@@ -223,17 +223,17 @@ case class Commoner(name: String,
     }
   }
 
-  def perform(performance: CommonerPerformance, person: Commoner): Commoner = {
-    val progressed = performance.progress
-    val (nextPerson, nextActivity) =
+  def perform(performance: CommonerPerformance, person: Commoner): (Commoner, Outbox) = {
+    val progressed = performance.advanceByTick
+    val (nextPerson, nextActivity, outbox) =
       if (progressed.isComplete) {
         if (DEBUG) println(s"$performance complete")
         // TODO handle outbox
-        val (updated, outbox) = initiateAction(progressed.perform, person)
-        (updated, Idle)
+        val (updated, outboxFromAction) = initiateAction(progressed.perform, person)
+        (updated, Idle, outboxFromAction)
       }
-      else (person, progressed)
-    nextPerson.copy(currentActivity = nextActivity)
+      else (person, progressed, person.outbox)
+    (nextPerson.copy(currentActivity = nextActivity), outbox)
   }
 
   @tailrec
