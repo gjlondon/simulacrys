@@ -1,6 +1,7 @@
 package facility
 
 import java.util.UUID
+import java.util.UUID.randomUUID
 
 import actions._
 import entity.Entity
@@ -91,6 +92,7 @@ import facility.Handlers._
 case class Pasture(capacity: Int = 3,
                    inbox: Inbox = Mailbox.empty,
                    outbox: Outbox = Mailbox.empty,
+                   address: UUID = randomUUID()
                   )
   extends Facility {
   override type Specific = Pasture
@@ -114,7 +116,24 @@ case class Pasture(capacity: Int = 3,
     (updatedEntity.copy(inbox = Mailbox.empty), outbox)
   }
 
-  override def update(time: DateTime, location: Location): Pasture = ???
+  override def update(time: DateTime, location: Location): Pasture = {
+
+    // 1. process all messages in inbox, updating state as necessary
+
+    // 2. if appropriate, create some messages to send to entities with whom
+    // you want to interact. These entities may include yourself, who e.g might
+    // complete some action on the next tick that has been started this tick
+
+    // 3. create a set of outgoing replies that respond to any income messages
+    // (to allow senders to react to success or failure), or that initiate an
+    // interaction with another entity
+
+    val (inboxIncorporated, outbox) = handleInbox(entity = this)
+
+    val (afterReactions, reactedOutbox) = react(time, location, inboxIncorporated)
+
+    afterReactions.copy(outbox = reactedOutbox)
+  }
 
   override def requestSucceeds(payload: MessagePayload, Specific: Pasture): Boolean = ???
 
@@ -130,6 +149,7 @@ case class Pasture(capacity: Int = 3,
 case class Farm(capacity: Int = 2,
                 inbox: Inbox = Mailbox.empty,
                 outbox: Outbox = Mailbox.empty,
+                address: UUID = randomUUID()
                )
   extends Facility {
   override type Specific = Farm
@@ -141,30 +161,18 @@ case class Farm(capacity: Int = 2,
   override def release: Farm = this.copy(capacity = capacity + 1)
 
   override def receiveMessages(messages: Queue[Message]): Farm = {
+
     this.copy(inbox = inbox ++ messages)
   }
 
   override def handleInbox(entity: Farm): (Farm, Outbox) = {
     val (updatedEntity, outbox) = consumeInbox(inbox = entity.inbox, entity = entity)
-    (updatedEntity.copy(inbox = Mailbox.empty), outbox)
+    val inboxCleared = updatedEntity.copy(inbox = Mailbox.empty)
+    (inboxCleared, outbox)
   }
 
   override def update(time: DateTime,
                       location: Location): Farm = {
-//    if (inbox.nonEmpty) println(inbox)
-
-    val noOpNotReq = Request(
-      from = this.address, to = this.address,
-      payload = NoOp,
-//      condition = {
-//        case _: Farm => true
-//        case _ => false
-//      },
-//      onSuccess = (c: Farm) => c,
-//      onFailure = (c: Farm) => c,
-    )
-
-    val testInbox = inbox.enqueue(noOpNotReq).enqueue(noOpNotReq).enqueue(noOpNotReq)
 
     // 1. process all messages in inbox, updating state as necessary
 
@@ -175,17 +183,9 @@ case class Farm(capacity: Int = 2,
     // 3. create a set of outgoing replies that respond to any income messages
     // (to allow senders to react to success or failure), or that initiate an
     // interaction with another entity
-
-    val (inboxIncorporated, outbox) = handleInbox(
-      entity = this.copy(inbox = testInbox),
-    )
+    val (inboxIncorporated, outbox) = handleInbox(entity = this)
 
     val (afterReactions, reactedOutbox) = react(time, location, inboxIncorporated)
-
-
-    // if entity is not incapacitated, allow a voluntary action
-    // by assumption, no action is allowed to take less than the length of a single tick
-    // so it's safe to assume that in a given tick, a entity will take at most one action
 
     afterReactions.copy(outbox = reactedOutbox)
   }
@@ -194,18 +194,21 @@ case class Farm(capacity: Int = 2,
   def requestSucceeds(payload: MessagePayload, entity: Farm): Boolean = {
     payload match {
       case NoOp => true
+      case Reserve => capacity > 0
     }
   }
 
   def onRequestSuccess(payload: MessagePayload, entity: Farm): Farm = {
     payload match {
       case NoOp => entity
+      case Reserve => entity.copy(capacity = entity.capacity - 1)
     }
   }
 
   def onRequestFailure(payload: MessagePayload, entity: Farm): Farm = {
     payload match {
       case NoOp => entity
+      case Reserve => entity
     }
   }
 
@@ -216,7 +219,8 @@ case class Farm(capacity: Int = 2,
 
 case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
                   outbox: Outbox = Mailbox.empty,
-                  )
+                  address: UUID = randomUUID()
+                 )
   extends Facility {
   override type Specific = Forest
   val grouping: Forests.type = Forests
@@ -235,7 +239,23 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
     (updatedEntity.copy(inbox = Mailbox.empty), outbox)
   }
 
-  override def update(time: DateTime, location: Location): Forest = ???
+  override def update(time: DateTime, location: Location): Forest = {
+    // 1. process all messages in inbox, updating state as necessary
+
+    // 2. if appropriate, create some messages to send to entities with whom
+    // you want to interact. These entities may include yourself, who e.g might
+    // complete some action on the next tick that has been started this tick
+
+    // 3. create a set of outgoing replies that respond to any income messages
+    // (to allow senders to react to success or failure), or that initiate an
+    // interaction with another entity
+
+    val (inboxIncorporated, outbox) = handleInbox(entity = this)
+
+    val (afterReactions, reactedOutbox) = react(time, location, inboxIncorporated)
+
+    afterReactions.copy(outbox = reactedOutbox)
+  }
 
   override val replyHandlers: ReplyHandlers = emptyForestReplyHandler
 

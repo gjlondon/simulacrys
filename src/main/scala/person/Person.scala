@@ -1,6 +1,7 @@
 package person
 
 import java.util.UUID
+import java.util.UUID.randomUUID
 
 import actions.CommonerActions._
 import actions.Farm.addProduceToInventory
@@ -132,7 +133,8 @@ case class Commoner(name: String,
                     actionQueue: Queue[PersonAction] = Queue[PersonAction](),
                     inbox: Inbox = Mailbox.empty,
                     outbox: Outbox = Mailbox.empty,
-                    replyHandlers: CommonerReplyHandlers = emptyReplyHandler
+                    replyHandlers: CommonerReplyHandlers = emptyReplyHandler,
+                    address: UUID = randomUUID()
                    )
   extends Person {
   override type Specific = Commoner

@@ -26,7 +26,7 @@ trait Entity {
 
   val NoAction: RelevantAction
   val involuntaryActions: ReactionCandidates = List()
-  val address: UUID = randomUUID()
+  val address: UUID
   val inbox: Queue[Message]
   val outbox: Queue[Message]
   val replyHandlers: ReplyHandlers
@@ -58,7 +58,6 @@ trait Entity {
 
   def handleReply(reply: Reply,
                   entity: Specific): Specific = {
-
     replyHandlers.get(reply.uuid) match {
       case None => entity
       case Some((onSuccess, onFailure)) =>

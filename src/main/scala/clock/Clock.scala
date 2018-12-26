@@ -5,14 +5,12 @@ import java.util.UUID
 import com.github.nscala_time.time.Imports._
 import configuration.Configuration
 import constants.Constants.TICK_DURATION
-import facility.Facility
+import entity.Entity
 import location.Location
 import message.MailboxTypes.Mailbox
 import message.{Mailbox, Message}
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
-import person.Person
-import populace.Populace
 import world.World
 
 import scala.annotation.tailrec
@@ -58,28 +56,32 @@ object Clock {
     val messagesByRecipient = messages.groupBy { msg: Message => msg.to }
     locations.par.map { l: Location =>
       deliverMessagesToLocation(l, messagesByRecipient)
-
     }.toList
   }
 
   def deliverMessagesToLocation(location: Location,
                                 messagesByRecipient: Map[UUID, Queue[Message]]): Location = {
-    val deliveredPeople = location.populace.par.map { p: Person =>
-      val messagesToPerson = messagesByRecipient.getOrElse(p.address, Queue[Message]())
-      p.receiveMessages(messagesToPerson)
-    }.seq.toSeq
-//    val deliveredFacilities = location.facilities.par.map { f: Facility =>
-//      val messagesToFacility = messagesByRecipient.getOrElse(f.address, Queue[Message]())
-//      f.receiveMessages(messagesToFacility)
-//    }.seq.toSeq
-    location.withNewPopulace(Populace(deliveredPeople: _*))
+    val delivered: Set[Entity] = location.entities.par.map { e: Entity =>
+      val messagesToEntity = messagesByRecipient.getOrElse(
+        e.address, Queue[Message]()
+      )
+      val received: Entity = e.receiveMessages(messagesToEntity)
+      received
+    }.seq
+    location.withNewEntities(delivered)
   }
 
 
   def updateLocation(time: DateTime, world: World)(loc: Location): (Location, Mailbox) = {
-    val updatedPopulace = loc.populace map { p => p.update(time = time, location = loc) }
-    val outgoingMessages = updatedPopulace.outgoingMessages
-    (loc.withNewPopulace(populace = updatedPopulace.living), outgoingMessages)
+    val updatedEntities = loc.entities map { p =>
+      val updated: Entity = p.update(time = time, location = loc)
+      updated
+    }
+    (loc.withNewEntities(entities = updatedEntities), outgoingMessages(updatedEntities))
+  }
+
+  def outgoingMessages(entities: Set[Entity]): Mailbox = {
+    entities.foldLeft(Mailbox.empty)((soFar, entity) => soFar ++ entity.outbox)
   }
 
   private def debugPopulationGrowth(newWorld: World): Unit = {

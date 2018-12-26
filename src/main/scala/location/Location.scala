@@ -3,6 +3,7 @@ package location
 import entity.Entity
 import facility._
 import org.joda.time.DateTime
+import person.Person
 import populace.Populace
 
 import scala.util.Random
@@ -41,14 +42,22 @@ sealed trait Location {
   val entities: Set[Entity] = populace ++ facilities
   def livingPopulace: Populace = populace.living
   def livingPopSize: Int = livingPopulace.size
-  def withNewPopulace(populace: Populace): Location  // TODO maybe replace with a lens?
+  def withNewEntities(entities: Set[Entity]): Location  // TODO maybe replace with a lens?
 }
 
 case class City(name: String,
                 populace: Populace,
                 facilities: Facilities) extends Location {
-  override def withNewPopulace(populace: Populace): Location = {
-    this.copy(populace = populace)
+  override def withNewEntities(entities: Set[Entity]): Location = {
+    // TODO can this be a groupby to avoid two passes?
+    val people = entities.collect {case p: Person => p }.toSeq
+    val populace = Populace(people: _*)
+
+    val facilities = Facilities(
+      entities.collect {case f: Facility => f }.toSeq: _*
+    )
+
+    this.copy(populace = populace, facilities = facilities)
   }
 }
 
@@ -59,7 +68,7 @@ object City {
     val facilities = typicalFacilities
     City(name, randomPop, facilities)
   }
-  
+
   def typicalFacilities: Facilities = {
     Facilities(
       facility.Farm(),
@@ -74,8 +83,16 @@ object City {
 case class Manor(name: String,
                  populace: Populace,
                  facilities: Facilities) extends Location {
-  override def withNewPopulace(populace: Populace): Location = {
-    this.copy(populace = populace)
+  override def withNewEntities(entities: Set[Entity]): Location = {
+    // TODO can this be a groupby to avoid two passes?
+    val people = entities.collect {case p: Person => p }.toSeq
+    val populace = Populace(people: _*)
+
+    val facilities = Facilities(
+      entities.collect {case f: Facility => f }.toSeq: _*
+    )
+
+    this.copy(populace = populace, facilities = facilities)
   }
 }
 
@@ -104,8 +121,16 @@ object Manor {
 case class Farm(name: String,
                 populace: Populace,
                 facilities: Facilities) extends Location {
-  override def withNewPopulace(populace: Populace): Location = {
-    this.copy(populace = populace)
+  override def withNewEntities(entities: Set[Entity]): Location = {
+    // TODO can this be a groupby to avoid two passes?
+    val people = entities.collect {case p: Person => p }.toSeq
+    val populace = Populace(people: _*)
+
+    val facilities = Facilities(
+      entities.collect {case f: Facility => f }.toSeq: _*
+    )
+
+    this.copy(populace = populace, facilities = facilities)
   }
 
 }
