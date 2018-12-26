@@ -97,6 +97,7 @@ trait Entity {
       entity = entity, reactions = involuntaryActions)
   }
 
+  val NoAction: RelevantAction
   val involuntaryActions: ReactionCandidates = List()
   type ReactionCandidates = List[(RelevantAction, (DateTime, Location, Specific) => Boolean)]
 
@@ -107,13 +108,7 @@ trait Entity {
       case Nil => entity
       case (possibleReaction, condition) :: remainingCandidates =>
         val shouldReact = condition(datetime, location, entity)
-
-        val action: RelevantAction = possibleReaction
-        // TODO fix noAction
-//                if (shouldReact) possibleReaction else {
-//                  val noAction: Action = FacilityNoAction()
-//                  noAction
-//                }
+        val action: RelevantAction = if (shouldReact) possibleReaction else NoAction
         // TODO handle outbox stemming from reactions
         val (updated, outbox) = initiateAction(action, entity)
         performNextReaction(

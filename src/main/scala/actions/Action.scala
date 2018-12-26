@@ -36,16 +36,29 @@ sealed trait Action {
   val instant: Boolean = durationToComplete == Minutes(0)
 }
 
+sealed trait NoAction extends Action {
+  override val durationToComplete: Time = Minutes(0)
+  override val name: String = "No Action"
+  override val exclusive: Boolean = false
+  override val interruptable: Boolean = false
+  override val volition: Volition = Voluntary
+
+}
+
 sealed trait PersonAction extends Action
+case object PersonNoAction extends PersonAction with NoAction
 sealed trait PersonReaction extends PersonAction with Reaction
 
 sealed trait PastureAction extends Action
+case object PastureNoAction extends PastureAction with NoAction
 sealed trait PastureReaction extends PastureAction with Reaction
 
 sealed trait FarmAction extends Action
+case object FarmNoAction extends FarmAction with NoAction
 sealed trait FarmReaction extends FarmAction with Reaction
 
 sealed trait ForestAction extends Action
+case object ForestNoAction extends ForestAction with NoAction
 sealed trait ForestReaction extends ForestAction with Reaction
 
 sealed trait Interaction[+T, -U, +V] {
@@ -97,28 +110,6 @@ object TransitionHealth extends PersonReaction {
     else starting
   }
 }
-
-
-object CommonerNoAction extends PersonAction {
-
-  override val durationToComplete: Time = Minutes(0)
-  override val name: String = "No Action"
-  override val exclusive: Boolean = false
-  override val interruptable: Boolean = false
-
-  override val volition: Volition = Voluntary
-}
-
-case object FarmNoAction extends Action {
-
-  override val durationToComplete: Time = Minutes(0)
-  override val name: String = "No Action"
-  override val exclusive: Boolean = false
-  override val interruptable: Boolean = false
-
-  override val volition: Volition = Voluntary
-}
-
 
 object Farm extends PersonAction {
   override val volition: Volition = Voluntary

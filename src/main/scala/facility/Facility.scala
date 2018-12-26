@@ -123,6 +123,8 @@ case class Pasture(capacity: Int = 3,
   override def onRequestFailure(payload: MessagePayload, Specific: Pasture): Pasture = ???
 
   override def initiateAction(action: PastureAction, entity: Pasture): (Pasture, Outbox) = ???
+
+  override val NoAction: PastureAction = PastureNoAction
 }
 
 case class Farm(capacity: Int = 2,
@@ -206,6 +208,8 @@ case class Farm(capacity: Int = 2,
   }
 
   override def initiateAction(action: FarmAction, entity: Farm): (Farm, Outbox) = ???
+
+  override val NoAction: FarmAction = FarmNoAction
 }
 
 case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
@@ -240,6 +244,8 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
   override def onRequestFailure(payload: MessagePayload, Specific: Forest): Forest = ???
 
   override def initiateAction(action: ForestAction, entity: Forest): (Forest, Outbox) = ???
+
+  override val NoAction: ForestAction = ForestNoAction
 }
 
 

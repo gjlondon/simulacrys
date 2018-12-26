@@ -244,7 +244,7 @@ case class Commoner(name: String,
     PersonAction, Option[Mailbox]
     ) = {
     candidates match {
-      case Nil => (CommonerNoAction, None)
+      case Nil => (PersonNoAction, None)
       case (candidateAction, condition, interactionGenerator) :: remainingCandidates =>
         val shouldAct = condition(datetime, location, person)
         if (DEBUG && shouldAct) {
@@ -291,7 +291,7 @@ case class Commoner(name: String,
       case Farm => doFarm(entity)
       case Metabolize => doMetabolize(entity)
       case TransitionHealth => doTransitionHealth(entity)
-      case CommonerNoAction => (entity, Mailbox.empty)
+      case PersonNoAction => (entity, Mailbox.empty)
       case Eat => doEat(entity)
       case Sleep => doSleep(entity)
     }
@@ -397,6 +397,8 @@ case class Commoner(name: String,
     (updated, Mailbox.empty)
 
   }
+
+  override val NoAction: PersonAction = PersonNoAction
 }
 
 object Commoner {
