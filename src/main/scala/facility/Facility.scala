@@ -151,6 +151,7 @@ case class Farm(capacity: Int = 2,
 
   override def update(time: DateTime,
                       location: Location): Farm = {
+//    if (inbox.nonEmpty) println(inbox)
 
     val noOpNotReq = Request(
       from = this.address, to = this.address,

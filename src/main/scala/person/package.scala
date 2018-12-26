@@ -1,4 +1,4 @@
-import actions.{Action, PersonAction, Reaction}
+import actions.PersonAction
 import location.Location
 import message.Message
 import org.joda.time.DateTime

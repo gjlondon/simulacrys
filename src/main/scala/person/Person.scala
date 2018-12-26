@@ -200,26 +200,69 @@ case class Commoner(name: String,
     // so it's safe to assume that in a given tick, a person will take at most one action
     val (afterActions, actedOutbox) = act(time, location, afterReactions)
 
+    //    if (actedOutbox.nonEmpty) println(actedOutbox)
     afterActions.copy(asOf = time, outbox = actedOutbox)
   }
 
-  def act(time: DateTime, location: Location, person: Commoner): (Commoner, Outbox) =  {
+  def act(time: DateTime, location: Location, entity: Commoner): (Commoner, Outbox) =  {
     // by assumption, no action is allowed to take less than the length of a single tick
     // so it's safe to assume that in a given tick, a person will take at most one action
 
-    person.currentActivity match {
+    entity.currentActivity match {
       case Incapacitated =>
-        if (DEBUG) println(s"${person.name} incapacit")
-        (person, person.outbox)
+        if (DEBUG) println(s"${entity.name} incapacit")
+        (entity, entity.outbox)
       case performance: CommonerPerformance =>
-        if (DEBUG) println(s"${person.name} still working on $performance, ticks remaining ${performance.ticksRemaining}")
-        perform(performance, person = person)
+        if (DEBUG) println(s"${entity.name} still working on $performance, ticks remaining ${performance.ticksRemaining}")
+        perform(performance, person = entity)
       case Idle =>
-        val (action, maybeMessages) = selectAction(time, location, person = person, candidates = candidateActions)
-        val performance = CommonerPerformance(perform = action)
-        if (DEBUG) println(s"${person.name} idle,  starting $action will take ${performance.ticksRemaining}")
+        // an entity can initiate an action, which will consume at least one tick, and
+        // require zero or more confirmations from affected parties
+        val action = selectAction(time, location, person = entity, candidates = candidateActions)
+        startPerformance(
+          action = action,
+          entity = entity, location = location
+        ) match {
+          case None => (entity, Mailbox.empty)
+          case Some(performance) =>
+            if (DEBUG) println(s"${entity.name} idle,  starting $action will take ${performance.ticksRemaining}")
+//            perform(performance, person = entity)
+            (entity.copy(currentActivity = performance), performance.confirmsRequired)
+        }
+    }
+  }
 
-        perform(performance, person = person)
+  def generateConfirmatoryMessages(action: PersonAction,
+                                   location: Location,
+                                   entity: Person): Option[Outbox] = {
+    action match {
+      case actions.Farm =>
+        val farmToUse = location.facilities.collectFirst { case f: facility.Farm if f.isAvailable => f }
+        farmToUse match {
+          case None => None
+          case Some(farm) =>
+            val reservationRequest = Request(
+              from = entity.address,
+              to = farm.address,
+              payload = Reserve
+            )
+            Some(Mailbox.from(reservationRequest))
+        }
+      case Metabolize => Some(Mailbox.empty)
+      case TransitionHealth => Some(Mailbox.empty)
+      case PersonNoAction => Some(Mailbox.empty)
+      case Eat => Some(Mailbox.empty)
+      case Sleep => Some(Mailbox.empty)
+    }
+  }
+
+  def startPerformance(action: PersonAction, entity: Commoner,
+                       location: Location): Option[CommonerPerformance] = {
+    generateConfirmatoryMessages(action = action, entity = entity, location = location) match {
+      case None => None
+      case Some(confirmsRequired) =>
+        val performance = CommonerPerformance(perform = action, confirmsRequired = confirmsRequired)
+        Some(performance)
     }
   }
 
@@ -237,31 +280,19 @@ case class Commoner(name: String,
   }
 
   @tailrec
-  private def selectAction(datetime: DateTime, location: Location,
+  private def selectAction(datetime: DateTime,
+                           location: Location,
                            person: Commoner,
-                           candidates: ActionCandidates): (
-    PersonAction, Option[Mailbox]
-    ) = {
+                           candidates: ActionCandidates): PersonAction = {
     candidates match {
-      case Nil => (PersonNoAction, None)
+      case Nil => PersonNoAction
       case (candidateAction, condition, interactionGenerator) :: remainingCandidates =>
         val shouldAct = condition(datetime, location, person)
         if (DEBUG && shouldAct) {
           val msg = s"Person ${person.name} should perform ${candidateAction.name} at time $datetime"
           println(msg)
         }
-        if (shouldAct) {
-          (candidateAction, None)
-//          interactionGenerator match {
-//            case None => (candidateAction, None)
-//            case Some(interactions) =>
-//              val maybeMessages = interactions(person, location)
-//              maybeMessages match {
-//                case None => (candidateAction, None)
-//                case Some(message) => (candidateAction, Some(message))
-//              }
-//          }
-        }
+        if (shouldAct) candidateAction
         else selectAction(
           datetime, location,
           person,
