@@ -3,7 +3,7 @@ package entity
 import java.util.UUID
 import java.util.UUID.randomUUID
 
-import actions.{Action, Reaction}
+import actions.Action
 import location.Location
 import message.MailboxTypes.{Inbox, Outbox}
 import message._
@@ -22,8 +22,11 @@ trait Entity {
   type Specific <: Entity
   type RelevantAction <: Action
   type ReplyHandlers = Map[UUID, (Specific => Specific, Specific => Specific)]
-  val address: UUID = randomUUID()
+  type ReactionCandidates = List[(RelevantAction, (DateTime, Location, Specific) => Boolean)]
 
+  val NoAction: RelevantAction
+  val involuntaryActions: ReactionCandidates = List()
+  val address: UUID = randomUUID()
   val inbox: Queue[Message]
   val outbox: Queue[Message]
   val replyHandlers: ReplyHandlers
@@ -34,6 +37,7 @@ trait Entity {
   def onRequestSuccess(payload: MessagePayload, specific: Specific): Specific
   def onRequestFailure(payload: MessagePayload, specific: Specific): Specific
   def initiateAction(action: RelevantAction, entity: Specific): (Specific, Outbox)
+  def handleInbox(entity: Specific): (Specific, Outbox)
 
   def handleRequest(req: Request,
                     entity: Specific): (Specific, Reply) = {
@@ -61,8 +65,6 @@ trait Entity {
         if (reply.succeeded) onSuccess(entity) else onFailure(entity)
     }
   }
-
-  def handleInbox(entity: Specific): (Specific, Outbox)
 
   def consumeInbox(inbox: Inbox,
                    entity: Specific): (Specific, Outbox) = {
@@ -96,10 +98,6 @@ trait Entity {
     performNextReaction(datetime = time, location = location,
       entity = entity, reactions = involuntaryActions)
   }
-
-  val NoAction: RelevantAction
-  val involuntaryActions: ReactionCandidates = List()
-  type ReactionCandidates = List[(RelevantAction, (DateTime, Location, Specific) => Boolean)]
 
   def performNextReaction(datetime: DateTime, location: Location,
                                   entity: Specific,
