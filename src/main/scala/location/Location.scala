@@ -57,7 +57,7 @@ case class City(name: String,
       entities.collect {case f: Facility => f }.toSeq: _*
     )
 
-    this.copy(populace = populace, facilities = facilities)
+    this.copy(populace = populace.living, facilities = facilities)
   }
 }
 
@@ -92,7 +92,7 @@ case class Manor(name: String,
       entities.collect {case f: Facility => f }.toSeq: _*
     )
 
-    this.copy(populace = populace, facilities = facilities)
+    this.copy(populace = populace.living, facilities = facilities)
   }
 }
 
@@ -130,7 +130,7 @@ case class Farm(name: String,
       entities.collect {case f: Facility => f }.toSeq: _*
     )
 
-    this.copy(populace = populace, facilities = facilities)
+    this.copy(populace = populace.living, facilities = facilities)
   }
 
 }
