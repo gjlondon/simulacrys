@@ -19,8 +19,8 @@ sealed trait Performance[T <: Commoner] extends CurrentActivity {
   val perform: PersonAction
   val status: PerformanceStatus
   val ticksElapsed: Int
-  val confirmsRequired: Mailbox
-  def confirmed: Boolean = confirmsRequired.isEmpty
+  val pendingConfirms: Set[UUID]
+  def confirmed: Boolean = pendingConfirms.isEmpty
   def ticksRemaining: Int = perform.ticksRequired - ticksElapsed
   def isComplete: Boolean = ticksRemaining <= 0
   def advanceByTickIfConfirmed: Performance[T]
@@ -29,7 +29,7 @@ sealed trait Performance[T <: Commoner] extends CurrentActivity {
 case class CommonerPerformance(perform: PersonAction,
                                ticksElapsed: Int = 0,
                                status: PerformanceStatus = PendingConfirmation,
-                               confirmsRequired: Mailbox = Mailbox.empty)
+                               pendingConfirms: Set[UUID] = Set[UUID]())
   extends Performance[Commoner] {
   override def advanceByTickIfConfirmed: Performance[Commoner] = {
     if (confirmed) {

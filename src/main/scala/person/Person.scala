@@ -149,6 +149,35 @@ case class Commoner(name: String,
     (updatedEntity.copy(inbox = Mailbox.empty), outbox)
   }
 
+  override def handleReply(reply: Reply,
+                           entity: Commoner): Commoner = {
+    val confirmsHandled: Commoner = handleConfirmations(reply, entity)
+
+    replyHandlers.get(reply.uuid) match {
+      case None => confirmsHandled
+      case Some((onSuccess, onFailure)) =>
+        if (reply.succeeded) onSuccess(confirmsHandled) else onFailure(confirmsHandled)
+    }
+  }
+
+  private def handleConfirmations(reply: Reply, entity: Commoner): Commoner = {
+    val confirmsHandled: Commoner = currentActivity match {
+      case p: CommonerPerformance if p.pendingConfirms.contains(reply.re) =>
+        if (!reply.succeeded) {
+          // TODO allow some other consequences of failure?
+          entity.copy(currentActivity = Idle)
+        }
+        else {
+          val pendingPerformance: CommonerPerformance = p.copy(
+            pendingConfirms = p.pendingConfirms - reply.re
+          )
+          entity.copy(currentActivity = pendingPerformance)
+        }
+      case _ => entity
+    }
+    confirmsHandled
+  }
+
   def requestSucceeds(payload: MessagePayload, entity: Commoner): Boolean = {
     payload match {
       case NoOp => true
@@ -221,20 +250,22 @@ case class Commoner(name: String,
         // an entity can initiate an action, which will consume at least one tick, and
         // require zero or more confirmations from affected parties
         val action = selectAction(time, location, person = entity, candidates = candidateActions)
-        startPerformance(
+        val (performance, pendingConfirms) = startPerformance(
           action = action,
           entity = entity, location = location
-        ) match {
-          case None => (entity, Mailbox.empty)
-          case Some(performance) =>
-            if (DEBUG) println(s"${entity.name} idle,  starting $action will take ${performance.ticksRemaining}")
-//            perform(performance, person = entity)
-            (entity.copy(currentActivity = performance), performance.confirmsRequired)
+        )
+        if (DEBUG) println(s"${entity.name} idle,  starting $action will take ${performance.ticksRemaining}")
+        //            perform(performance, person = entity)
+        val outgoingMessages = pendingConfirms match {
+          case None => Mailbox.empty
+          case Some(messages) => messages
         }
+        (entity.copy(currentActivity = performance), outgoingMessages)
+
     }
   }
 
-  def generateConfirmatoryMessages(action: PersonAction,
+  def generateConfirmationRequests(action: PersonAction,
                                    location: Location,
                                    entity: Person): Option[Outbox] = {
     action match {
@@ -250,21 +281,35 @@ case class Commoner(name: String,
             )
             Some(Mailbox.from(reservationRequest))
         }
-      case Metabolize => Some(Mailbox.empty)
-      case TransitionHealth => Some(Mailbox.empty)
-      case PersonNoAction => Some(Mailbox.empty)
-      case Eat => Some(Mailbox.empty)
-      case Sleep => Some(Mailbox.empty)
+      case Metabolize => None
+      case TransitionHealth => None
+      case PersonNoAction => None
+      case Eat => None
+      case Sleep => None
     }
   }
 
   def startPerformance(action: PersonAction, entity: Commoner,
-                       location: Location): Option[CommonerPerformance] = {
-    generateConfirmatoryMessages(action = action, entity = entity, location = location) match {
+                       location: Location): (CommonerPerformance, Option[Mailbox]) = {
+    val confirmationRequests: Option[Mailbox] = generateConfirmationRequests(
+      action = action, entity = entity, location = location) match {
       case None => None
-      case Some(confirmsRequired) =>
-        val performance = CommonerPerformance(perform = action, confirmsRequired = confirmsRequired)
-        Some(performance)
+      case Some(requests) => Some(requests)
+    }
+
+    confirmationRequests match {
+      case None =>
+        val performance = CommonerPerformance(
+          perform = action,
+          pendingConfirms = Set[UUID]()
+        )
+        (performance, None)
+      case Some(messages) =>
+        val performance = CommonerPerformance(
+          perform = action,
+          pendingConfirms = messages.map(_.uuid).toSet
+        )
+        (performance, confirmationRequests)
     }
   }
 
