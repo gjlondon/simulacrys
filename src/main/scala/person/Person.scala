@@ -203,7 +203,7 @@ case class Commoner(name: String,
     val (afterActions, actedOutbox) = act(time, location, afterReactions)
 
     //    if (actedOutbox.nonEmpty) println(actedOutbox)
-    afterActions.copy(asOf = time, outbox = actedOutbox)
+    afterActions.copy(asOf = time, outbox = outbox ++ reactedOutbox ++ actedOutbox)
   }
 
   def act(time: DateTime, location: Location, entity: Commoner): (Commoner, Outbox) =  {

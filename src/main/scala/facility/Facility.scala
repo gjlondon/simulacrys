@@ -187,7 +187,7 @@ case class Farm(capacity: Int = 2,
 
     val (afterReactions, reactedOutbox) = react(time, location, inboxIncorporated)
 
-    afterReactions.copy(outbox = reactedOutbox)
+    afterReactions.copy(outbox = outbox ++ reactedOutbox)
   }
 
 

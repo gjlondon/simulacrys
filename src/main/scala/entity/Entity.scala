@@ -71,7 +71,7 @@ trait Entity {
     @tailrec
     def go(inbox: Inbox, entity: Specific, outbox: Outbox): (Specific, Outbox) = {
       inbox.dequeueOption match {
-        case None => (entity, Mailbox.empty)
+        case None => (entity, outbox)
         case Some((message, remaining)) =>
           message match {
             case req: Request =>
@@ -82,7 +82,7 @@ trait Entity {
               val updated = handleReply(rep, entity)
               go(remaining, updated, outbox)
             // this probably shouldn't happen:
-            case _ => (entity, Mailbox.empty)
+            case _ => (entity, outbox)
           }
       }
     }
