@@ -269,7 +269,7 @@ case class Commoner(name: String,
   }
 
   def perform(performance: CommonerPerformance, person: Commoner): (Commoner, Outbox) = {
-    val progressed = performance.advanceByTick
+    val progressed = performance.advanceByTickIfConfirmed
     val (nextPerson, nextActivity, outbox) =
       if (progressed.isComplete) {
         if (DEBUG) println(s"$performance complete")

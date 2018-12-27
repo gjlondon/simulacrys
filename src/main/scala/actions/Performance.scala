@@ -1,7 +1,7 @@
 package actions
 
-import message.MailboxTypes.Mailbox
-import message.{Mailbox, Message}
+import java.util.UUID
+
 import person.Commoner
 
 sealed trait CurrentActivity
@@ -23,7 +23,7 @@ sealed trait Performance[T <: Commoner] extends CurrentActivity {
   def confirmed: Boolean = confirmsRequired.isEmpty
   def ticksRemaining: Int = perform.ticksRequired - ticksElapsed
   def isComplete: Boolean = ticksRemaining <= 0
-  def advanceByTick: Performance[T]
+  def advanceByTickIfConfirmed: Performance[T]
 }
 
 case class CommonerPerformance(perform: PersonAction,
@@ -31,9 +31,10 @@ case class CommonerPerformance(perform: PersonAction,
                                status: PerformanceStatus = PendingConfirmation,
                                confirmsRequired: Mailbox = Mailbox.empty)
   extends Performance[Commoner] {
-  override def advanceByTick: Performance[Commoner] = {
-    if (confirmed)
+  override def advanceByTickIfConfirmed: Performance[Commoner] = {
+    if (confirmed) {
       this.copy(ticksElapsed = this.ticksElapsed + 1)
+    }
     else this
   }
 }
