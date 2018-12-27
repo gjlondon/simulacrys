@@ -194,7 +194,7 @@ case class Farm(capacity: Int = 2,
   def requestSucceeds(payload: MessagePayload, entity: Farm): Boolean = {
     payload match {
       case NoOp => true
-      case Reserve => capacity > 0
+      case Reserve => entity.capacity > 0
     }
   }
 
