@@ -197,18 +197,7 @@ case class Commoner(name: String,
   }
 
   def update(time: DateTime, location: Location): Commoner =  {
-    val noOpNotReq = Request(
-      from = this.address, to = this.address,
-      payload = NoOp,
-      //      condition = {
-      //        case _: Farm => true
-      //        case _ => false
-      //      },
-      //      onSuccess = (c: Farm) => c,
-      //      onFailure = (c: Farm) => c,
-    )
 
-    val testInbox = inbox.enqueue(noOpNotReq).enqueue(noOpNotReq).enqueue(noOpNotReq)
 
     // 1. process all messages in inbox, updating state as necessary
 
@@ -221,7 +210,7 @@ case class Commoner(name: String,
     // interaction with another entity
 
     val (inboxIncorporated, outbox) = handleInbox(
-      entity = this.copy(inbox = testInbox),
+      entity = this,
     )
 
     val (afterReactions: Commoner, reactedOutbox: Outbox) = react(time, location, inboxIncorporated)
