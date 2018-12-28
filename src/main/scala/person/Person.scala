@@ -406,20 +406,19 @@ case class Commoner(name: String,
 
   }
 
+  /**
+    * People can take advantage of local available arable land to produce a certain quantity of
+    * crops and/or live stock.
+    **
+    * We'd like to be able to select a subset of possible crops ot farm, and then randomly generate a crop yield
+    * amount based on a distribution that is specific to each type of crop. Ideally we could create a "yield map"
+    * which would map from Type to Yield amount.
+    **
+    * Ideally farms would have some degree of persistence so that we could model the fact that growing crops inevitably takes
+    * time, but maybe that's a future feature.
+    *
+    */
   private def doFarm(entity: Commoner): (Commoner, Mailbox) = {
-
-    /**
-      * People can take advantage of local available arable land to produce a certain quantity of
-      * crops and/or live stock.
-      **
-      * We'd like to be able to select a subset of possible crops ot farm, and then randomly generate a crop yield
-      * amount based on a distribution that is specific to each type of crop. Ideally we could create a "yield map"
-      * which would map from Type to Yield amount.
-      **
-      * Ideally farms would have some degree of persistence so that we could model the fact that growing crops inevitably takes
-      * time, but maybe that's a future feature.
-      *
-      */
 
     val cropToFarm: SimpleFood = SimpleFood.randomCrop()
 
