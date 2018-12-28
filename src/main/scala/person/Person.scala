@@ -164,8 +164,8 @@ case class Commoner(name: String,
     val confirmsHandled: Commoner = currentActivity match {
       case p: CommonerPerformance if p.pendingConfirms.contains(reply.re) =>
         if (!reply.succeeded) {
-          // TODO allow some other consequences of failure?
-          entity.copy(currentActivity = Idle)
+          entity.copy(currentActivity = Idle,
+            outbox = entity.outbox ++ p.onFailure())
         }
         else {
           val updatedConfirms = p.confirmationStatuses + (reply.re -> true)
