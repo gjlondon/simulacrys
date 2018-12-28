@@ -32,7 +32,7 @@ class Facilities(seq : Facility*) extends Set[Facility]
   }
 
   def get(key: FacilityGroup): Option[List[Facility]] = {
-    val matches = seq.collect { case f: Facility if f.grouping == key => f }
+    val matches = seq.filter( _.grouping == key )
     if (matches.nonEmpty) Some(matches.toList) else None
   }
 }

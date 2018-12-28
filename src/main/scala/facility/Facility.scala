@@ -23,49 +23,6 @@ sealed trait Facility extends Entity {
 
   def reserve: Specific
   def release: Specific
-
-
-//  override def update(time: DateTime,
-//                      location: Location): Specific = {
-//
-//    val noOpNotReq = Request(
-//      from = this.address, to = this.address,
-//      payload = NoOp,
-//      //      condition = {
-//      //        case _: Farm => true
-//      //        case _ => false
-//      //      },
-//      //      onSuccess = (c: Farm) => c,
-//      //      onFailure = (c: Farm) => c,
-//    )
-//
-//    val testInbox = inbox.enqueue(noOpNotReq).enqueue(noOpNotReq).enqueue(noOpNotReq)
-//
-//    // 1. process all messages in inbox, updating state as necessary
-//
-//    // 2. if appropriate, create some messages to send to entities with whom
-//    // you want to interact. These entities may include yourself, who e.g might
-//    // complete some action on the next tick that has been started this tick
-//
-//    // 3. create a set of outgoing replies that respond to any income messages
-//    // (to allow senders to react to success or failure), or that initiate an
-//    // interaction with another entity
-//
-//    val (inboxIncorporated, outbox) = processInbox(
-//      testInbox,
-//      entity = this,
-//      replyHandlers = replyHandlers
-//    )
-//
-//
-//    val afterReactions: Specific = react(time, location, inboxIncorporated)
-//
-//    // if entity is not incapacitated, allow a voluntary action
-//    // by assumption, no action is allowed to take less than the length of a single tick
-//    // so it's safe to assume that in a given tick, a entity will take at most one action
-//
-//    afterReactions.copy(outbox = outbox)
-//  }
 }
 
 object Handlers {
