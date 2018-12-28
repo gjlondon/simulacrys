@@ -16,6 +16,7 @@ import scala.collection.immutable.Queue
 sealed trait Facility extends Entity {
   val name: String = this.getClass.getSimpleName
   val capacity: Int
+  val maxCapacity: Int
   val grouping: FacilityGroup
   val isAvailable: Boolean = capacity >= 1
   val replyHandlers: ReplyHandlers
@@ -144,6 +145,7 @@ case class Pasture(capacity: Int = 3,
   override def initiateAction(action: PastureAction, entity: Pasture): (Pasture, Outbox) = ???
 
   override val NoAction: PastureAction = PastureNoAction
+  override val maxCapacity: Int = 3
 }
 
 case class Farm(capacity: Int = 2,
@@ -195,6 +197,7 @@ case class Farm(capacity: Int = 2,
     payload match {
       case NoOp => true
       case Reserve => entity.capacity > 0
+      case Release => entity.capacity < entity.maxCapacity
     }
   }
 
@@ -202,19 +205,20 @@ case class Farm(capacity: Int = 2,
     payload match {
       case NoOp => entity
       case Reserve => entity.copy(capacity = entity.capacity - 1)
+      case Release => entity.copy(capacity = entity.capacity + 1)
     }
   }
 
   def onRequestFailure(payload: MessagePayload, entity: Farm): Farm = {
     payload match {
-      case NoOp => entity
-      case Reserve => entity
+      case NoOp | Reserve | Release => entity
     }
   }
 
   override def initiateAction(action: FarmAction, entity: Farm): (Farm, Outbox) = ???
 
   override val NoAction: FarmAction = FarmNoAction
+  override val maxCapacity: Int = 2
 }
 
 case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
@@ -268,6 +272,7 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
   override def initiateAction(action: ForestAction, entity: Forest): (Forest, Outbox) = ???
 
   override val NoAction: ForestAction = ForestNoAction
+  override val maxCapacity: Int = 1
 }
 
 
