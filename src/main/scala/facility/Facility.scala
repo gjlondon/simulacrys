@@ -100,8 +100,6 @@ case class Pasture(capacity: Int = 3,
   override type RelevantAction = PastureAction
   val grouping: Pastures.type = Pastures
 
-
-  // override val replyHandlers: ReplyHandlers = emptyPastureReplyHandler
   override val replyHandlers: ReplyHandlers = emptyPastureReplyHandler
 
   override def reserve: Pasture = this.copy(capacity = capacity - 1)

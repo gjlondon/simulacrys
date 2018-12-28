@@ -75,7 +75,6 @@ trait Entity {
         case Some((message, remaining)) =>
           message match {
             case req: Request =>
-              // safe to coerce because we've just checked the type compliance
               val (updated, reply) = handleRequest(req, entity)
               go(remaining, updated, outbox.enqueue(reply))
             case rep: Reply =>
@@ -90,10 +89,15 @@ trait Entity {
     (processedPerson, outbox)
   }
 
+  /** resolve involuntary actions
+    *
+    * @param time
+    * @param location
+    * @param entity
+    * @return
+    */
   def react(time: DateTime, location: Location, entity: Specific): (Specific, Outbox) = {
-    // resolve involuntary actions
     // TODO add a concept of thirst
-
     performNextReaction(datetime = time, location = location,
       entity = entity, reactions = involuntaryActions)
   }

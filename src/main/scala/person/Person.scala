@@ -220,13 +220,10 @@ case class Commoner(name: String,
     // so it's safe to assume that in a given tick, a person will take at most one action
     val (afterActions, actedOutbox) = act(time, location, afterReactions)
 
-    //    if (actedOutbox.nonEmpty) println(actedOutbox)
     afterActions.copy(asOf = time, outbox = outbox ++ reactedOutbox ++ actedOutbox)
   }
 
   def act(time: DateTime, location: Location, entity: Commoner): (Commoner, Outbox) =  {
-    // by assumption, no action is allowed to take less than the length of a single tick
-    // so it's safe to assume that in a given tick, a person will take at most one action
 
     entity.currentActivity match {
       case Incapacitated =>
@@ -244,7 +241,6 @@ case class Commoner(name: String,
           entity = entity, location = location
         )
         if (DEBUG) println(s"${entity.name} idle,  starting $action will take ${performance.ticksRemaining}")
-        //            perform(performance, person = entity)
         val outgoingMessages = pendingConfirms match {
           case None => Mailbox.empty
           case Some(messages) => messages
@@ -348,7 +344,7 @@ case class Commoner(name: String,
   val candidateActions: ActionCandidates = List(
 
     (Eat, shouldEat, None),
-    (Farm, shouldFarm, None), // Some(farmInteraction)),
+    (Farm, shouldFarm, None),
     //    ("relax", relax, shouldRelax),
     //    ("procreate", procreate, shouldProcreate),
     (Sleep, shouldSleep, None)
