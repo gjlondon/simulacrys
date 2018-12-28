@@ -168,9 +168,9 @@ case class Commoner(name: String,
           entity.copy(currentActivity = Idle)
         }
         else {
-          val pendingPerformance: CommonerPerformance = p.copy(
-            pendingConfirms = p.pendingConfirms - reply.re
-          )
+          val updatedConfirms = p.confirmationStatuses + (reply.re -> true)
+          val pendingPerformance: CommonerPerformance =
+            p.copy(confirmationStatuses = updatedConfirms)
           entity.copy(currentActivity = pendingPerformance)
         }
       case _ => entity
@@ -254,21 +254,18 @@ case class Commoner(name: String,
     }
   }
 
-  def generateConfirmationRequests(action: PersonAction,
-                                   location: Location,
-                                   entity: Person): Option[Outbox] = {
+  def getOtherEntitiesRequired(action: PersonAction,
+                               location: Location,
+                               entity: Person): Option[Set[Entity]] = {
     action match {
       case actions.Farm =>
-        val farmToUse = location.facilities.collectFirst { case f: facility.Farm if f.isAvailable => f }
+        val farmToUse = location.facilities.collectFirst {
+          case f: facility.Farm if f.isAvailable => f
+        }
         farmToUse match {
           case None => None
           case Some(farm) =>
-            val reservationRequest = Request(
-              from = entity.address,
-              to = farm.address,
-              payload = Reserve
-            )
-            Some(Mailbox.from(reservationRequest))
+            Some(Set(farm))
         }
       case Metabolize => None
       case TransitionHealth => None
@@ -280,36 +277,47 @@ case class Commoner(name: String,
 
   def startPerformance(action: PersonAction, entity: Commoner,
                        location: Location): (CommonerPerformance, Option[Mailbox]) = {
-    val confirmationRequests: Option[Mailbox] = generateConfirmationRequests(
-      action = action, entity = entity, location = location) match {
-      case None => None
-      case Some(requests) => Some(requests)
+    val otherEntitiesRequired: Option[Set[Entity]] = getOtherEntitiesRequired(
+      action = action, entity = entity, location = location)
+
+    val (confirmsRequired, requests) = otherEntitiesRequired match {
+      case None =>
+         (Map[UUID, Entity](), None)
+      case Some(required) =>
+        val (confirmsRequired, requests) =
+          constructRequiredConfirms(from = entity, to = required)
+        (confirmsRequired, Some(requests))
+    }
+    val performance = CommonerPerformance.ofAction(
+      action = action,
+      by = entity,
+      confirmsRequired = confirmsRequired)
+    (performance, requests)
+  }
+
+  def constructRequiredConfirms(from: Commoner, to: Set[Entity]): (Map[UUID, Entity], Queue[Message]) = {
+    val linksAndRequests = to.toSeq map { target: Entity =>
+      val request = Request(
+        from = from.address,
+        to = target.address,
+        payload = Reserve)
+      (request.uuid -> target, request)
     }
 
-    confirmationRequests match {
-      case None =>
-        val performance = CommonerPerformance(
-          perform = action,
-          pendingConfirms = Set[UUID]()
-        )
-        (performance, None)
-      case Some(messages) =>
-        val performance = CommonerPerformance(
-          perform = action,
-          pendingConfirms = messages.map(_.uuid).toSet
-        )
-        (performance, confirmationRequests)
-    }
+    val (confirmsRequired, requests) = linksAndRequests.unzip
+
+    (confirmsRequired.toMap, Queue[Message](requests: _*))
   }
+
 
   def perform(performance: CommonerPerformance, person: Commoner): (Commoner, Outbox) = {
     val progressed = performance.advanceByTickIfConfirmed
     val (nextPerson, nextActivity, outbox) =
       if (progressed.isComplete) {
-        if (DEBUG) println(s"$performance complete")
-        // TODO handle outbox
+        if (DEBUG && performance.perform != PersonNoAction) println(s"$performance complete")
+        val outboxFromCompletion = performance.onSuccess()
         val (updated, outboxFromAction) = initiateAction(progressed.perform, person)
-        (updated, Idle, outboxFromAction)
+        (updated, Idle, outboxFromCompletion ++ outboxFromAction)
       }
       else (person, progressed, person.outbox)
     (nextPerson.copy(currentActivity = nextActivity), outbox)
