@@ -61,30 +61,6 @@ sealed trait ForestAction extends Action
 case object ForestNoAction extends ForestAction with NoAction
 sealed trait ForestReaction extends ForestAction with Reaction
 
-sealed trait Interaction[+T, -U, +V] {
-  val preconditionMet: U => Boolean
-  val effect: U => V
-  val onSuccess:T
-  val onFailure: T
-  val name: String
-}
-
-case class NoOpInteraction(onSuccess: Commoner, onFailure: Commoner) extends Interaction[Commoner, Commoner, Commoner] {
-  override val preconditionMet: Commoner => Boolean = _ => true
-  override val effect: Commoner => Commoner = { c: Commoner => c }
-  override val name: String = "No Op on Person"
-}
-
-//case class Till(person: Commoner) extends Interaction[Commoner, facility.Farm, facility.Farm] {
-//  override val preconditionMet: facility.Farm => Boolean = {
-//    f => f.isAvailable }
-//  override val effect: facility.Farm => facility.Farm = {
-//    f => f.reserve }
-//  override val onSuccess: Commoner = { actions.Farm(person) }
-//  override val onFailure: Commoner = { person }
-//  override val name: String = "Till the land"
-//}
-
 sealed trait Reaction extends Action{
   override val instant: Boolean = true
   override val durationToComplete: Time = Minutes(0)
@@ -136,8 +112,6 @@ object Farm extends PersonAction {
 object Eat extends PersonAction {
   override val volition: Volition = Voluntary
   override val durationToComplete: Time = Minutes(30)
-
-
 
   override val name: String = "Eat"
   override val exclusive: Boolean = true
@@ -196,17 +170,4 @@ object CommonerActions {
     relax(c)
   }
   val unit: Commoner => Commoner = { c: Commoner => c }
-
-//  def farmInteraction(person: Commoner,
-//                      location: Location,
-//                      ): Option[PersonToFacilityMessage] = {
-//    val interaction = Till(person)
-//    val targetFarm = location.findAvailableFacility(Farms)
-//    targetFarm match {
-//      case None => None
-//      case Some(farm) => Some(PersonToFacilityMessage(from = person, to = farm,
-//        payload = interaction))
-//    }
-//
-//  }
 }
