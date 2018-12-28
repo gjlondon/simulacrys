@@ -91,13 +91,29 @@ case class Pasture(capacity: Int = 3,
     afterReactions.copy(outbox = reactedOutbox)
   }
 
-  override def requestSucceeds(payload: MessagePayload, Specific: Pasture): Boolean = ???
+  def requestSucceeds(payload: MessagePayload, entity: Pasture): Boolean = {
+    payload match {
+      case NoOp => true
+      case Reserve => entity.capacity > 0
+      case Release => entity.capacity < entity.maxCapacity
+    }
+  }
 
-  override def onRequestSuccess(payload: MessagePayload, Specific: Pasture): Pasture = ???
+  def onRequestSuccess(payload: MessagePayload, entity: Pasture): Pasture = {
+    payload match {
+      case NoOp => entity
+      case Reserve => reserve
+      case Release => release
+    }
+  }
 
-  override def onRequestFailure(payload: MessagePayload, Specific: Pasture): Pasture = ???
+  def onRequestFailure(payload: MessagePayload, entity: Pasture): Pasture = {
+    payload match {
+      case NoOp | Reserve | Release => entity
+    }
+  }
 
-  override def initiateAction(action: PastureAction, entity: Pasture): (Pasture, Outbox) = ???
+  override def initiateAction(action: PastureAction, entity: Pasture): (Pasture, Outbox) = (this, Mailbox.empty)
 
   override val NoAction: PastureAction = PastureNoAction
   override val maxCapacity: Int = 3
@@ -159,8 +175,8 @@ case class Farm(capacity: Int = 2,
   def onRequestSuccess(payload: MessagePayload, entity: Farm): Farm = {
     payload match {
       case NoOp => entity
-      case Reserve => entity.copy(capacity = entity.capacity - 1)
-      case Release => entity.copy(capacity = entity.capacity + 1)
+      case Reserve => reserve
+      case Release => release
     }
   }
 
@@ -170,7 +186,7 @@ case class Farm(capacity: Int = 2,
     }
   }
 
-  override def initiateAction(action: FarmAction, entity: Farm): (Farm, Outbox) = ???
+  override def initiateAction(action: FarmAction, entity: Farm): (Farm, Outbox) = (this, Mailbox.empty)
 
   override val NoAction: FarmAction = FarmNoAction
   override val maxCapacity: Int = 2
@@ -218,13 +234,29 @@ case class Forest(capacity: Int = 1, inbox: Inbox = Mailbox.empty,
 
   override val replyHandlers: ReplyHandlers = emptyForestReplyHandler
 
-  override def requestSucceeds(payload: MessagePayload, Specific: Forest): Boolean = ???
+  def requestSucceeds(payload: MessagePayload, entity: Forest): Boolean = {
+    payload match {
+      case NoOp => true
+      case Reserve => entity.capacity > 0
+      case Release => entity.capacity < entity.maxCapacity
+    }
+  }
 
-  override def onRequestSuccess(payload: MessagePayload, Specific: Forest): Forest = ???
+  def onRequestSuccess(payload: MessagePayload, entity: Forest): Forest = {
+    payload match {
+      case NoOp => entity
+      case Reserve => reserve
+      case Release => release
+    }
+  }
 
-  override def onRequestFailure(payload: MessagePayload, Specific: Forest): Forest = ???
+  def onRequestFailure(payload: MessagePayload, entity: Forest): Forest = {
+    payload match {
+      case NoOp | Reserve | Release => entity
+    }
+  }
 
-  override def initiateAction(action: ForestAction, entity: Forest): (Forest, Outbox) = ???
+  override def initiateAction(action: ForestAction, entity: Forest): (Forest, Outbox) = (this, Mailbox.empty)
 
   override val NoAction: ForestAction = ForestNoAction
   override val maxCapacity: Int = 1
