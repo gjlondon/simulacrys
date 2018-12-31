@@ -1,5 +1,4 @@
-package my.game.pkg
-
+package com.thrive.game
 
 import com.badlogic.gdx.backends.lwjgl.{LwjglApplication, LwjglApplicationConfiguration}
 

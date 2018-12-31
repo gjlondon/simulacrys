@@ -1,4 +1,4 @@
-package my.game.pkg
+package com.thrive.game
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.{GL20, Texture}
