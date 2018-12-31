@@ -1,4 +1,4 @@
-import facility.Farm
+import simulation.facility.Farm
 
 val f = Farm()
 
