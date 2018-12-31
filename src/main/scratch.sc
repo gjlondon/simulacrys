@@ -1,4 +1,4 @@
-import simulation.facility.Farm
+import com.thrive.simulation.facility.Farm
 
 val f = Farm()
 
