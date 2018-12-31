@@ -1,0 +1,108 @@
+[0m[[0m[33mwarn[0m] [0m[0m-target is deprecated: -target:jvm-1.6 is deprecated, forcing use of jvm-1.8[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:132:40: parameter value location in method shouldMetabolize is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldMetabolize(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                       ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:132:60: parameter value person in method shouldMetabolize is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldMetabolize(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                           ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:136:33: parameter value location in method shouldEat is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldEat(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:136:53: parameter value person in method shouldEat is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldEat(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:146:35: parameter value location in method shouldRelax is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldRelax(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                  ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:146:55: parameter value person in method shouldRelax is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldRelax(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:151:35: parameter value location in method shouldSleep is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldSleep(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                  ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:151:55: parameter value person in method shouldSleep is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldSleep(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:156:39: parameter value location in method shouldProcreate is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldProcreate(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:161:46: parameter value location in method shouldTransitionHealth is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldTransitionHealth(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Action.scala:161:66: parameter value person in method shouldTransitionHealth is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def shouldTransitionHealth(time: DateTime, location: Location, person: Commoner): Boolean = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                                 ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Performance.scala:44:41: private default argument in object CommonerPerformance is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                        ticksElapsed: Int = 0,[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                        ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/actions/Performance.scala:45:41: private default argument in object CommonerPerformance is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                        status: PerformanceStatus = PendingConfirmation,[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                        ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/clock/Clock.scala:75:38: parameter value world in method updateLocation is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def updateLocation(time: DateTime, world: World)(loc: Location): (Location, Mailbox) = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/facility/Facility.scala:87:29: pattern var outbox in method update is never used; `outbox@_' suppresses this warning[0m
+[0m[[0m[33mwarn[0m] [0m[0m    val (inboxIncorporated, outbox) = handleInbox(entity = this)[0m
+[0m[[0m[33mwarn[0m] [0m[0m                            ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/facility/Facility.scala:228:29: pattern var outbox in method update is never used; `outbox@_' suppresses this warning[0m
+[0m[[0m[33mwarn[0m] [0m[0m    val (inboxIncorporated, outbox) = handleInbox(entity = this)[0m
+[0m[[0m[33mwarn[0m] [0m[0m                            ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/facility/package.scala:3:47: Unused import[0m
+[0m[[0m[33mwarn[0m] [0m[0mimport com.thrive.simulation.actions.{Action, Reaction, Farm}[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                              ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/facility/package.scala:3:57: Unused import[0m
+[0m[[0m[33mwarn[0m] [0m[0mimport com.thrive.simulation.actions.{Action, Reaction, Farm}[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                        ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/inventory/FoodInventory.scala:63:64: implicit numeric widening[0m
+[0m[[0m[33mwarn[0m] [0m[0m        val energyFromIngredients = energyPerKg * unitWeight * quantity[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/inventory/FoodInventory.scala:59:45: pattern var total in value $anonfun is never used; `total@_' suppresses this warning[0m
+[0m[[0m[33mwarn[0m] [0m[0m    ingredients.foldLeft(Joules(0)) { case (total: Energy, (foodType: SimpleFood, ingredientGroup: FoodItemGroup)) =>[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                            ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/meal/Meal.scala:5:32: Unused import[0m
+[0m[[0m[33mwarn[0m] [0m[0mimport squants.energy.{Energy, Joules}[0m
+[0m[[0m[33mwarn[0m] [0m[0m                               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/person/Person.scala:103:5: implicit numeric widening[0m
+[0m[[0m[33mwarn[0m] [0m[0m    required * calorie[0m
+[0m[[0m[33mwarn[0m] [0m[0m    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/person/Person.scala:329:41: pattern var interactionGenerator in method selectAction is never used; `interactionGenerator@_' suppresses this warning[0m
+[0m[[0m[33mwarn[0m] [0m[0m      case (candidateAction, condition, interactionGenerator) :: remainingCandidates =>[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                        ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/person/Person.scala:255:32: parameter value entity in method getOtherEntitiesRequired is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m                               entity: Person): Option[Set[Entity]] = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/populace/Populace.scala:53:17: parameter value ofSize in method randomPop is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m  def randomPop(ofSize: Int, startingTime: DateTime): Populace = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/populace/Populace.scala:55:45: parameter value idx in value $anonfun is never used[0m
+[0m[[0m[33mwarn[0m] [0m[0m    val randomPeople = (0 to popSize) map { idx =>[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                            ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/world/Location.scala:4:61: Unused import[0m
+[0m[[0m[33mwarn[0m] [0m[0mimport com.thrive.simulation.facility.{Farm ⇒ FacilityFarm, Pasture ⇒ FacilityPasture, Forest ⇒ FacilityForest}[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                            ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/world/Location.scala:4:88: Unused import[0m
+[0m[[0m[33mwarn[0m] [0m[0mimport com.thrive.simulation.facility.{Farm ⇒ FacilityFarm, Pasture ⇒ FacilityPasture, Forest ⇒ FacilityForest}[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                                                                       ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/person/Person.scala:182:5: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: Release, Reserve[0m
+[0m[[0m[33mwarn[0m] [0m[0m    payload match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/person/Person.scala:188:5: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: Release, Reserve[0m
+[0m[[0m[33mwarn[0m] [0m[0m    payload match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/person/Person.scala:194:5: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: Release, Reserve[0m
+[0m[[0m[33mwarn[0m] [0m[0m    payload match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/location/City.scala:1:1: [0m
+[0m[[0m[33mwarn[0m] [0m[0mFound names but no class, trait or object is defined in the compilation unit.[0m
+[0m[[0m[33mwarn[0m] [0m[0mThe incremental compiler cannot record the dependency information in such case.[0m
+[0m[[0m[33mwarn[0m] [0m[0mSome errors like unused import referring to a non-existent class might not be reported.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    [0m
+[0m[[0m[33mwarn[0m] [0m[0mpackage com.thrive.simulation.location[0m
+[0m[[0m[33mwarn[0m] [0m[0m^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/rogueleaderr/programming/projects/simulacrys/core/src/main/scala/com/thrive/simulation/Main.scala:12:16: overriding method main in trait App is deprecated (since 2.11.0): main should not be overridden[0m
+[0m[[0m[33mwarn[0m] [0m[0m  override def main(args: Array[String]): Unit = {[0m
+[0m[[0m[33mwarn[0m] [0m[0m               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m34 warnings found[0m

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="abcgame"
+		module="abcgame_2.11"
+		revision="0.1"
+		conf="compile-internal"
+		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, pom, scala-tool"
+		date="20181231125250"/>
+	<dependencies>
+		<module organisation="com.badlogicgames.gdx" name="gdx">
+			<revision name="1.9.9" status="release" pubdate="20181115103844" resolver="sbt-chain" artresolver="sbt-chain" homepage="" downloaded="false" searched="false" default="false" conf="default, compile, runtime, default(compile), master" position="1">
+				<license name="Apache Licence 2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="no" details="" size="4606" time="0" location="/home/rogueleaderr/.ivy2/cache/com.badlogicgames.gdx/gdx/ivy-1.9.9.xml" searched="false" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/com/badlogicgames/gdx/gdx/1.9.9/gdx-1.9.9.pom"/>
+				<caller organisation="abcgame" name="abcgame_2.11" conf="compile-internal, compile, provided, optional" rev="1.9.9" rev-constraint-default="1.9.9" rev-constraint-dynamic="1.9.9" callerrev="0.1"/>
+				<artifacts>
+					<artifact name="gdx" type="jar" ext="jar" status="no" details="" size="1938617" time="0" location="/home/rogueleaderr/.ivy2/cache/com.badlogicgames.gdx/gdx/jars/gdx-1.9.9.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/com/badlogicgames/gdx/gdx/1.9.9/gdx-1.9.9.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scala-lang" name="scala-library">
+			<revision name="2.11.12" status="release" pubdate="20171102183730" resolver="sbt-chain" artresolver="sbt-chain" homepage="http://www.scala-lang.org/" extra-info.apiURL="http://www.scala-lang.org/api/2.11.12/" downloaded="false" searched="false" default="false" conf="default, compile, runtime, default(compile), master" position="0">
+				<license name="BSD 3-Clause" url="http://www.scala-lang.org/license.html"/>
+				<metadata-artifact status="no" details="" size="2473" time="0" location="/home/rogueleaderr/.ivy2/cache/org.scala-lang/scala-library/ivy-2.11.12.xml" searched="false" origin-is-local="false" origin-location="https://oss.sonatype.org/content/repositories/releases/org/scala-lang/scala-library/2.11.12/scala-library-2.11.12.pom"/>
+				<caller organisation="abcgame" name="abcgame_2.11" conf="compile-internal, compile, provided, optional" rev="2.11.12" rev-constraint-default="2.11.12" rev-constraint-dynamic="2.11.12" callerrev="0.1"/>
+				<artifacts>
+					<artifact name="scala-library" type="jar" ext="jar" status="no" details="" size="5749423" time="0" location="/home/rogueleaderr/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.12.jar">
+						<origin-location is-local="false" location="UNKNOWN"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>
