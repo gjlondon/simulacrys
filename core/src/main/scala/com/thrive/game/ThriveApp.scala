@@ -80,6 +80,13 @@ case class WorldController(var world: World, var time: DateTime) extends InputAd
   }
 
   def update(deltaTime: Float): Unit = {
+
+    val (newWorld, newTime) = Clock.tick(world = world, time=time)
+    world = newWorld
+    time = newTime
+    world.printOverview()
+
+    handleDebugInput(deltaTime)
     updateTestObjects(deltaTime)
   }
 

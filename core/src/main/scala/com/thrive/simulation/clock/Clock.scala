@@ -23,7 +23,7 @@ object Clock {
   var popSeries = new ListBuffer[Int]
 
   @tailrec
-  def tick(tickNum: Int = 0, maxTicks: Int, world: World, time: DateTime): World = {
+  def recursiveTick(tickNum: Int = 0, maxTicks: Int, world: World, time: DateTime): World = {
     if (tickNum >= maxTicks) return world
 
     // TODO replace with some kind of partial (was getting collection construction errors when I tried)
@@ -48,7 +48,7 @@ object Clock {
 
     printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
 
-    tick(tickNum + 1, maxTicks, newWorld, time = time + TICK_DURATION)
+    recursiveTick(tickNum + 1, maxTicks, newWorld, time = time + TICK_DURATION)
   }
 
   def deliverMessagesToAllLocations(locations: List[Location],
@@ -57,6 +57,30 @@ object Clock {
     locations.par.map { l: Location =>
       deliverMessagesToLocation(l, messagesByRecipient)
     }.toList
+  }
+
+  def tick(world: World, time: DateTime): (World, DateTime) = {
+    // TODO replace with some kind of partial (was getting collection construction errors when I tried)
+
+    val results =
+      if (Configuration.PARALLEL) {
+        world.grid.positions.par.map(updateLocation(time, world))
+      }
+      else {
+        world.grid.positions.map(updateLocation(time, world))
+      }
+
+    val (newLocations, outgoingMessages) = results.unzip
+    // TODO: this seems like a big performance hit -- can it be faster?
+    val allOutgoingMessages = outgoingMessages.foldLeft(Mailbox.empty)((a, b) => a ++ b)
+    val locationsPostDelivery = deliverMessagesToAllLocations(
+      newLocations.toList,
+      allOutgoingMessages
+    )
+    val newWorld = World.fromLocations(locationsPostDelivery.toVector)
+    if (Configuration.DEBUG) debugPopulationGrowth(newWorld)
+
+    (newWorld, time + TICK_DURATION)
   }
 
   def deliverMessagesToLocation(location: Location,
