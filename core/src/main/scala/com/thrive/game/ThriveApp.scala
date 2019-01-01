@@ -1,53 +1,77 @@
 package com.thrive.game
 
+import com.badlogic.gdx.graphics.Texture.TextureFilter
 import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
 import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Texture}
-import com.badlogic.gdx.{Game, Gdx, ScreenAdapter}
+import com.badlogic.gdx.{Game, ScreenAdapter}
 import com.thrive.simulation.person.Commoner
 import org.joda.time.DateTime
 
+import scala.util.Random
+
 class ThriveApp extends Game {
 
-    lazy val sprite = new Texture("libgdxlogo.png")
-    lazy val batch = new SpriteBatch
+  lazy val sprite = new Texture("libgdxlogo.png")
+  lazy val batch = new SpriteBatch
 
-    override def create(): Unit = {
-        setScreen(new MainScreen)
-    }
-
-//    override def render(): Unit = {
-//        Gdx.gl.glClearColor(0.4f + MathUtils.random()*0.2f,0.4f + MathUtils.random()*0.2f,0.4f + MathUtils.random()*0.2f,1f)
-//        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-//        batch.begin()
-//        batch.draw(sprite, (Gdx.graphics.getWidth - sprite.getWidth) / 2f, (Gdx.graphics.getHeight - sprite.getHeight) / 2f)
-//        batch.end()
-//    }
+  override def create(): Unit = {
+    setScreen(new MainScreen)
+  }
 }
 
 class MainScreen extends ScreenAdapter {
 
-    private lazy val camera = new OrthographicCamera()
-    private val batch: SpriteBatch = new SpriteBatch()
+  import com.badlogic.gdx.Gdx
+  import com.badlogic.gdx.graphics.Texture
+  import com.badlogic.gdx.graphics.g2d.{Sprite, TextureRegion}
+  import com.badlogic.gdx.math.MathUtils
 
-    private lazy val font = {
-        val f = new BitmapFont()
-        f.getData.setScale(2f)
-        f
-    }
+  private lazy val camera = new OrthographicCamera()
+  private lazy val batch: SpriteBatch = new SpriteBatch()
+  private lazy val texture = new Texture("libgdxlogo.png")
+  texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
 
-    override def show(): Unit = {
-        camera.setToOrtho(false, 800, 480)
-    }
+  private lazy val region = new TextureRegion(texture, 0, 0,
+    texture.getWidth, texture.getHeight)
+  private lazy val sprite = new Sprite(region)
 
-    override def render(delta: Float): Unit = {
-        Gdx.gl.glClearColor(0, 0, 0.5f, 1)
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        camera.update()
-        batch.setProjectionMatrix(camera.combined)
-        batch.begin()
-        val fred = Commoner.randomCommoner(DateTime.now)
-        font.draw(batch, fred.name, 0, font.getCapHeight)
-        batch.end()
-    }
+  private lazy val font = {
+    val f = new BitmapFont()
+    f.getData.setScale(2f)
+    f
+  }
+
+  override def show(): Unit = {
+    camera.setToOrtho(false, 800, 480)
+    val aspectRatio = sprite.getHeight / sprite.getWidth
+    sprite.setSize(190f, 190f * aspectRatio)
+  }
+
+  override def render(delta: Float): Unit = {
+    Gdx.gl.glClearColor(0.1f, 1, 1, 0.1f)
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+    camera.update()
+    batch.setProjectionMatrix(camera.combined)
+    batch.begin()
+    val fred = Commoner.randomCommoner(DateTime.now)
+
+    val degreesPerSecond = 1000.0f
+    val extraRotation = Gdx.graphics.getDeltaTime * degreesPerSecond
+    val rot = (sprite.getRotation + extraRotation) % 360
+    val shakeAmplitudeInDegrees = 7.0f
+    val shake = MathUtils.sin(rot) * shakeAmplitudeInDegrees
+
+    sprite.setRotation(shake)
+
+    sprite.setCenter(200, 200)
+    sprite.draw(batch)
+
+
+    font.draw(
+      batch, fred.name,
+      Random.nextInt(600), font.getCapHeight + 50
+    )
+    batch.end()
+  }
 
 }

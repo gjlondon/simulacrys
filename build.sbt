@@ -95,7 +95,7 @@ lazy val desktop = project in file("desktop") settings (sharedSettings: _*) depe
     "com.badlogicgames.gdx" % "gdx-backend-lwjgl" % libgdxVersion,
     "com.badlogicgames.gdx" % "gdx-platform" % libgdxVersion classifier "natives-desktop"
   ),
-  fork in Compile := true,
+//  fork in Compile := true,
   baseDirectory in run := assetsDirectory.value,
   unmanagedResourceDirectories in Compile += assetsDirectory.value,
   assembly := {
