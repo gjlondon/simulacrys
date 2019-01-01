@@ -1,5 +1,6 @@
 package com.thrive.game.render
 
+import com.badlogic.gdx.graphics.Texture.TextureFilter
 import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
 import com.badlogic.gdx.graphics.{GL20, OrthographicCamera}
 import com.badlogic.gdx.utils.Disposable
@@ -7,6 +8,7 @@ import com.badlogic.gdx.{Gdx, ScreenAdapter}
 import com.thrive.game.controller.WorldController
 import com.thrive.simulation.clock.Clock.dtFMT
 import com.thrive.simulation.constants.Constants
+import com.thrive.simulation.world.World
 import org.joda.time.DateTime
 
 case class WorldRenderer(worldController: WorldController)
@@ -20,6 +22,7 @@ case class WorldRenderer(worldController: WorldController)
   private lazy val font = {
     val f = new BitmapFont()
     f.getData.setScale(1f)
+    f.getRegion().getTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
     f
   }
 
@@ -50,8 +53,7 @@ case class WorldRenderer(worldController: WorldController)
     camera.update()
 
     val (world, time) = worldController.update(delta)
-    val summary = world.gridPopulations()
-    renderPopulationSummary(summary, time)
+    renderPopulationSummary(world, time)
     renderTestObjects()
     renderGui()
 
@@ -64,9 +66,10 @@ case class WorldRenderer(worldController: WorldController)
     batch.end()
   }
 
-  private def renderPopulationSummary(summary: Vector[(String, Int)], time: DateTime): Unit = {
+  private def renderPopulationSummary(world: World, time: DateTime): Unit = {
     batch.setProjectionMatrix(cameraGUI.combined)
     batch.begin()
+    val summary = world.gridPopulations()
     val inRow = Constants.VIEWPORT_GUI_HEIGHT / 25
     for (((locName, population), i) <- summary.zipWithIndex) {
 
@@ -76,6 +79,7 @@ case class WorldRenderer(worldController: WorldController)
       font.draw(batch, locName, 10 + 230 * colNum, yPos)
       font.draw(batch, population.toString, 200 + 230 * colNum, yPos)
       font.draw(batch, time.formatted(dtFMT.print(time)), 550, 600)
+      font.draw(batch, s"Total Living: ${world.totalPopulation}", 100, 600)
     }
     batch.end()
   }

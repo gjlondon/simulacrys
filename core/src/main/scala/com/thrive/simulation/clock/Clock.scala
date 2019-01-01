@@ -23,8 +23,8 @@ object Clock {
   var popSeries = new ListBuffer[Int]
 
   @tailrec
-  def recursiveTick(tickNum: Int = 0, maxTicks: Int, world: World, time: DateTime): World = {
-    if (tickNum >= maxTicks) return world
+  def recursiveTick(tickNum: Int = 0, maxTicks: Int, world: World, time: DateTime): (World, DateTime) = {
+    if (tickNum >= maxTicks) return (world, time)
 
     // TODO replace with some kind of partial (was getting collection construction errors when I tried)
 
@@ -46,7 +46,7 @@ object Clock {
     val newWorld = World.fromLocations(locationsPostDelivery.toVector)
     if (Configuration.DEBUG) debugPopulationGrowth(newWorld)
 
-    printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
+//    printTick(tickNum, newWorld = newWorld, time = time, maxTicks = maxTicks)
 
     recursiveTick(tickNum + 1, maxTicks, newWorld, time = time + TICK_DURATION)
   }

@@ -58,7 +58,10 @@ case class WorldController(var world: World, var time: DateTime) extends InputAd
 
   def update(deltaTime: Float): (World, DateTime) = {
 
-    val (newWorld, newTime) = Clock.tick(world = world, time=time)
+    val (newWorld, newTime) = Clock.recursiveTick(
+      world = world, time=time, maxTicks = 20
+    )
+
     world = newWorld
     time = newTime
 
