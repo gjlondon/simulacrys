@@ -16,8 +16,14 @@ class ThriveApp extends Game {
 
   override def create(): Unit = {
     Gdx.app.setLogLevel(Application.LOG_DEBUG)
-    val worldController = new WorldController()
-    setScreen(new WorldRenderer(worldController))
+
+    val chrono = GJChronology.getInstance
+
+    val startingTime = new DateTime(1066, 10, 14, 10, 0, 0, 0, chrono)
+    val world = World.randomWorld(startingTime)
+
+    val worldController = WorldController(world = world, time = startingTime)
+    setScreen(WorldRenderer(worldController))
   }
 }
 
@@ -26,7 +32,7 @@ object WorldController {
   private val TAG = classOf[WorldController].getName
 }
 
-case class WorldController() {
+case class WorldController(var world: World, var time: DateTime) extends InputAdapter {
   private val TAG = classOf[WorldController].getName
   val testSprites: Vector[Sprite] = {
 
@@ -52,6 +58,7 @@ case class WorldController() {
   }
 
   var selectedSprite = 0
+  Gdx.input.setInputProcessor(this)
 
   import com.badlogic.gdx.graphics.Pixmap
   import com.badlogic.gdx.graphics.Pixmap.Format
@@ -76,6 +83,21 @@ case class WorldController() {
     updateTestObjects(deltaTime)
   }
 
+  import com.badlogic.gdx.Gdx
+  import com.badlogic.gdx.Input.Keys
+
+  override def keyUp(keycode: Int): Boolean = { // Reset game world
+    if (keycode == Keys.R) {
+      Gdx.app.debug(TAG, "Game world resetted")
+    }
+    else { // Select next sprite
+      if (keycode == Keys.SPACE) {
+        selectedSprite = (selectedSprite + 1) % testSprites.length
+        Gdx.app.debug(TAG, "Sprite #" + selectedSprite + " selected")
+      }
+    }
+    false
+  }
 
   private def updateTestObjects(deltaTime: Float): Unit = { // Get current rotation from selected sprite
     var rotation = testSprites(selectedSprite).getRotation
@@ -85,6 +107,24 @@ case class WorldController() {
     rotation %= 360
     // Set new rotation value to selected sprite
     testSprites(selectedSprite).setRotation(rotation)
+  }
+
+  import com.badlogic.gdx.Application.ApplicationType
+  import com.badlogic.gdx.Gdx
+  import com.badlogic.gdx.Input.Keys
+
+  private def handleDebugInput(deltaTime: Float): Unit = {
+    if (Gdx.app.getType ne ApplicationType.Desktop) return
+    // Selected Sprite Controls
+    val sprMoveSpeed = 20 * deltaTime
+    if (Gdx.input.isKeyPressed(Keys.A)) moveSelectedSprite(-sprMoveSpeed, 0)
+    if (Gdx.input.isKeyPressed(Keys.D)) moveSelectedSprite(sprMoveSpeed, 0)
+    if (Gdx.input.isKeyPressed(Keys.W)) moveSelectedSprite(0, sprMoveSpeed)
+    if (Gdx.input.isKeyPressed(Keys.S)) moveSelectedSprite(0, -sprMoveSpeed)
+  }
+
+  private def moveSelectedSprite(x: Float, y: Float): Unit = {
+    testSprites(selectedSprite).translate(x, y)
   }
 }
 
