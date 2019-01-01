@@ -1,8 +1,7 @@
 package com.thrive.game.render
 
-import com.badlogic.gdx.graphics.Texture.TextureFilter
-import com.badlogic.gdx.graphics.g2d.{BitmapFont, Sprite, SpriteBatch, TextureRegion}
-import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Texture}
+import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
+import com.badlogic.gdx.graphics.{GL20, OrthographicCamera}
 import com.badlogic.gdx.utils.Disposable
 import com.badlogic.gdx.{Gdx, ScreenAdapter}
 import com.thrive.game.controller.WorldController
@@ -14,20 +13,13 @@ case class WorldRenderer(worldController: WorldController)
   extends ScreenAdapter with Disposable {
 
   private val TAG = classOf[WorldRenderer].getName
-
+  private lazy val batch = new SpriteBatch()
   private lazy val camera = new OrthographicCamera()
-  val cameraGUI = new OrthographicCamera(Constants.VIEWPORT_GUI_WIDTH,
-    Constants.VIEWPORT_GUI_HEIGHT)
-
-  private lazy val batch: SpriteBatch = new SpriteBatch()
-  private lazy val texture = new Texture("libgdxlogo.png")
-  private lazy val region = new TextureRegion(texture, 0, 0,
-    texture.getWidth, texture.getHeight)
-  private lazy val sprite = new Sprite(region)
+  private lazy val cameraGUI = new OrthographicCamera()
 
   private lazy val font = {
     val f = new BitmapFont()
-    f.getData.setScale(.5f)
+    f.getData.setScale(1f)
     f
   }
 
@@ -44,10 +36,8 @@ case class WorldRenderer(worldController: WorldController)
     cameraGUI.position.set(0, 0, 0)
     cameraGUI.setToOrtho(false, Constants.VIEWPORT_GUI_WIDTH,
       Constants.VIEWPORT_GUI_HEIGHT)
-
-    texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
-    camera.position.set(0, 0, 0)
     camera.setToOrtho(false, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT)
+    camera.position.set(0, 0, 0)
     Gdx.gl.glClearColor(
       0.1f, 0.1f,
       0.25f, 0.1f

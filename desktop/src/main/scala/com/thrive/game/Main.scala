@@ -6,8 +6,8 @@ import com.badlogic.gdx.backends.lwjgl.{LwjglApplication, LwjglApplicationConfig
 object Main extends App {
   val cfg = new LwjglApplicationConfiguration
   cfg.title = "Thrive"
-  cfg.height = 640
-  cfg.width = 800
+  cfg.height = 800
+  cfg.width = 1200
   cfg.forceExit = false
 
   val thriveApp: LwjglApplication = new LwjglApplication(
