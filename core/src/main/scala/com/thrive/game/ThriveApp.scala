@@ -1,11 +1,15 @@
 package com.thrive.game
 
+import com.badlogic.gdx._
 import com.badlogic.gdx.graphics.Texture.TextureFilter
 import com.badlogic.gdx.graphics.g2d.{BitmapFont, Sprite, SpriteBatch, TextureRegion}
 import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Pixmap, Texture}
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.Disposable
-import com.badlogic.gdx.{Application, Game, Gdx, ScreenAdapter}
+import com.thrive.simulation.clock.Clock
+import com.thrive.simulation.world.World
+import org.joda.time.DateTime
+import org.joda.time.chrono.GJChronology
 
 class ThriveApp extends Game {
   private val TAG = classOf[ThriveApp].getName
@@ -90,6 +94,9 @@ case class WorldRenderer(worldController: WorldController)
   private val TAG = classOf[WorldRenderer].getName
 
   private lazy val camera = new OrthographicCamera()
+  val cameraGUI = new OrthographicCamera(Constants.VIEWPORT_GUI_WIDTH,
+    Constants.VIEWPORT_GUI_HEIGHT)
+
   private lazy val batch: SpriteBatch = new SpriteBatch()
   private lazy val texture = new Texture("libgdxlogo.png")
   private lazy val region = new TextureRegion(texture, 0, 0,
@@ -105,9 +112,16 @@ case class WorldRenderer(worldController: WorldController)
   override def resize(width: Int, height: Int): Unit = {
     camera.viewportWidth = (Constants.VIEWPORT_HEIGHT / height) * width
     camera.update()
+
+    cameraGUI.viewportHeight = Constants.VIEWPORT_GUI_HEIGHT
+    cameraGUI.viewportWidth = (Constants.VIEWPORT_GUI_HEIGHT / height.asInstanceOf[Float]) * width.asInstanceOf[Float]
+    cameraGUI.position.set(cameraGUI.viewportWidth / 2, cameraGUI.viewportHeight / 2, 0)
   }
 
   override def show(): Unit = {
+    cameraGUI.position.set(0, 0, 0)
+    cameraGUI.setToOrtho(true) // flip y-axis
+
     texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
     camera.position.set(0, 0, 0)
     camera.setToOrtho(false, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT)
@@ -124,7 +138,15 @@ case class WorldRenderer(worldController: WorldController)
 
     worldController.update(delta)
     renderTestObjects()
+    renderGui()
 
+  }
+
+  private def renderGui(): Unit = {
+    batch.setProjectionMatrix(cameraGUI.combined)
+    batch.begin()
+
+    batch.end()
   }
 
   private def renderTestObjects(): Unit = {
@@ -138,6 +160,10 @@ case class WorldRenderer(worldController: WorldController)
 }
 
 object Constants {
+  val VIEWPORT_GUI_HEIGHT: Float = 640
+
+  val VIEWPORT_GUI_WIDTH: Float = 800
+
   val VIEWPORT_HEIGHT: Float = 100
 
   val VIEWPORT_WIDTH: Float = 100
