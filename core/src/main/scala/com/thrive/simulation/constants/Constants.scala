@@ -12,4 +12,12 @@ object Constants {
   val KG_PER_LB = 0.453592
   val LEAN_MASS_PER_METER_OF_HEIGHT: AreaDensity = Kilograms(75 * KG_PER_LB) / (Meters(1) * Meters(1))  // just guessing
   val TICK_DURATION: DurationBuilder = 5.minutes
+
+  val VIEWPORT_GUI_HEIGHT: Float = 640
+
+  val VIEWPORT_GUI_WIDTH: Float = 800
+
+  val VIEWPORT_HEIGHT: Float = 100
+
+  val VIEWPORT_WIDTH: Float = 100
 }
