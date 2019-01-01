@@ -1,36 +1,58 @@
 package com.thrive.game
 
 import com.badlogic.gdx.graphics.Texture.TextureFilter
-import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
+import com.badlogic.gdx.graphics.g2d.{BitmapFont, Sprite, SpriteBatch, TextureRegion}
 import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Texture}
-import com.badlogic.gdx.{Game, ScreenAdapter}
+import com.badlogic.gdx.{Application, Game, Gdx, ScreenAdapter}
 import com.thrive.simulation.person.Commoner
 import org.joda.time.DateTime
+import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.utils.Disposable
 
 import scala.util.Random
 
 class ThriveApp extends Game {
-
-  lazy val sprite = new Texture("libgdxlogo.png")
-  lazy val batch = new SpriteBatch
+  private val TAG = classOf[ThriveApp].getName
 
   override def create(): Unit = {
-    setScreen(new MainScreen)
+    Gdx.app.setLogLevel(Application.LOG_DEBUG)
+    val worldController = new WorldController()
+    setScreen(new WorldRenderer(worldController))
   }
 }
 
-class MainScreen extends ScreenAdapter {
 
-  import com.badlogic.gdx.Gdx
-  import com.badlogic.gdx.graphics.Texture
-  import com.badlogic.gdx.graphics.g2d.{Sprite, TextureRegion}
-  import com.badlogic.gdx.math.MathUtils
+object WorldController {
+  private val TAG = classOf[WorldController].getName
+}
+
+case class WorldController() {
+  private val TAG = classOf[WorldController].getName
+
+  def update(deltaTime: Float): Unit = {
+  }
+}
+
+case class WorldRenderer(worldController: WorldController)
+  extends ScreenAdapter with Disposable {
+
+  private val TAG = classOf[WorldRenderer].getName
+
+  override def resize(width: Int, height: Int): Unit = {
+  }
+
+  override def pause(): Unit = {
+  }
+
+  override def resume(): Unit = {
+  }
+
+  override def dispose(): Unit = {
+  }
 
   private lazy val camera = new OrthographicCamera()
   private lazy val batch: SpriteBatch = new SpriteBatch()
   private lazy val texture = new Texture("libgdxlogo.png")
-  texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
-
   private lazy val region = new TextureRegion(texture, 0, 0,
     texture.getWidth, texture.getHeight)
   private lazy val sprite = new Sprite(region)
@@ -42,6 +64,7 @@ class MainScreen extends ScreenAdapter {
   }
 
   override def show(): Unit = {
+    texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
     camera.setToOrtho(false, 800, 480)
     val aspectRatio = sprite.getHeight / sprite.getWidth
     sprite.setSize(190f, 190f * aspectRatio)
