@@ -19,4 +19,6 @@ object Main extends App {
   prefs.putInteger("Height", 200)
   val retrievedHeight = prefs.getInteger("Height")
   thriveApp.debug("Meta", retrievedHeight.toString)
+
+
 }

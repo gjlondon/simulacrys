@@ -22,6 +22,14 @@ class World private (startingGrid: Grid) {
     }
   }
 
+  def gridPopulations(): Vector[(String, Int)] = {
+    grid.positions sortWith { _.name < _.name} map { location: Location =>
+      val locName = s"${location.name} (${this.getClass.getSimpleName})"
+      val population = location.livingPopSize
+      (locName, population)
+    }
+  }
+
   def printSummary(): Unit = {
     val totalPop: Int = totalPopulation
     println(s"Total com.thrive.simulation.world population $totalPop")

@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Pixmap, Texture}
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.Disposable
 import com.thrive.simulation.clock.Clock
+import com.thrive.simulation.clock.Clock.dtFMT
 import com.thrive.simulation.world.World
 import org.joda.time.DateTime
 import org.joda.time.chrono.GJChronology
@@ -79,15 +80,16 @@ case class WorldController(var world: World, var time: DateTime) extends InputAd
     pixmap
   }
 
-  def update(deltaTime: Float): Unit = {
+  def update(deltaTime: Float): (World, DateTime) = {
 
     val (newWorld, newTime) = Clock.tick(world = world, time=time)
     world = newWorld
     time = newTime
-    world.printOverview()
 
     handleDebugInput(deltaTime)
     updateTestObjects(deltaTime)
+
+    (world, time)
   }
 
   import com.badlogic.gdx.Gdx
@@ -152,7 +154,7 @@ case class WorldRenderer(worldController: WorldController)
 
   private lazy val font = {
     val f = new BitmapFont()
-    f.getData.setScale(2f)
+    f.getData.setScale(.5f)
     f
   }
 
@@ -167,7 +169,8 @@ case class WorldRenderer(worldController: WorldController)
 
   override def show(): Unit = {
     cameraGUI.position.set(0, 0, 0)
-    cameraGUI.setToOrtho(true) // flip y-axis
+    cameraGUI.setToOrtho(false, Constants.VIEWPORT_GUI_WIDTH,
+      Constants.VIEWPORT_GUI_HEIGHT)
 
     texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
     camera.position.set(0, 0, 0)
@@ -183,7 +186,9 @@ case class WorldRenderer(worldController: WorldController)
 
     camera.update()
 
-    worldController.update(delta)
+    val (world, time) = worldController.update(delta)
+    val summary = world.gridPopulations()
+    renderPopulationSummary(summary, time)
     renderTestObjects()
     renderGui()
 
@@ -193,6 +198,22 @@ case class WorldRenderer(worldController: WorldController)
     batch.setProjectionMatrix(cameraGUI.combined)
     batch.begin()
 
+    batch.end()
+  }
+
+  private def renderPopulationSummary(summary: Vector[(String, Int)], time: DateTime): Unit = {
+    batch.setProjectionMatrix(cameraGUI.combined)
+    batch.begin()
+    val inRow = Constants.VIEWPORT_GUI_HEIGHT / 25
+    for (((locName, population), i) <- summary.zipWithIndex) {
+
+      val colNum = (i / inRow).floor
+      val rowNum = i % inRow
+      val yPos = 30 + (20 * rowNum)
+      font.draw(batch, locName, 10 + 230 * colNum, yPos)
+      font.draw(batch, population.toString, 200 + 230 * colNum, yPos)
+      font.draw(batch, time.formatted(dtFMT.print(time)), 550, 600)
+    }
     batch.end()
   }
 
