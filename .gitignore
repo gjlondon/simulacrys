@@ -1,1 +1,4 @@
 .idea/*/*
+core/target/*
+desktop/target/*
+target/*
