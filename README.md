@@ -17,9 +17,17 @@ to develop a computer program populated with people who behave a realistically a
 definite actions in a a concrete environment.
 
 Because the goal is to create emergent macro-economic behavior that is nevertheless visible and interpretable at a
-"human scale" (I do eventually want to bring player characters into this world), it makes rely on agent-based modeling
+"human scale" (I do eventually want to bring player characters into this world), it relies on agent-based modeling
 techniques rather than classical macro-economic modeling. The fact that I know hardly anything about agent-based modeling
 or about classical macro-economic modeling will hopefully not be too great a barrier.
+
+== Architecture
+
+This project doubles a convenient excuse for me to learn Scala. I'm particularly interested in learning (and learning) from the functional aspects of Scala, so I set a goal of building this simulation using (in as much as possible), exclusively **pure functional** programming, i.e. completely avoiding mutation. So far, I've managed to avoid all mutability, even though that's made the design significantly more complex and probably less efficient. I haven't gotten full purity because this type of simulation leans very heavily on random number generation and *purifying* my RNG usage hasn't felt worthwhile.
+
+The nice thing about this design is that it, at least in principle, allows for full parallelization of agent decision making (though my current design requires a full bottlenecking "reduce" step between each tick of the game clock).
+
+In the future, I hope to allow the agents to **learn** policies through some type of reinforcement learning.
 
 == The Domain
 
@@ -48,9 +56,8 @@ People who are not able to satisfy their basic needs will die. So each person wi
 ==== Time
 
 As in life, time in the simulation flies relentlessly forward. Time in the simulation is governed by a single global
-clock that moves forward in one-hour ticks. At the beginning of each tick, each person will make a decision based on
-their policies about which action to take ove the coming hour (which choice may be simply to continue a previously undertaken
-action which requires more than an hour to complete). At the beginning of the next tick, each person will observe the
+clock that moves forward in five minute ticks. At the beginning of each tick, each person will make a decision based on
+their policies about which action to take over the coming period (which choice may be simply to continue a previously undertaken action which requires more than an hour to complete). At the beginning of the next tick, each person will observe the
 results of their action on the previous tick, observe the current state of their locally observable environment, and
 use that information to choose an action for the next round.
 
