@@ -1,6 +1,6 @@
 = README
 
-This project is an attempt to create a realistic,
+This project is a (very early stage) attempt to create a realistic,
 high fidelity simulation of a functional economic (and, in time, perhaps also political) system.
 
 The original impetus for this project was to assist in building a believable world for an original Dungeons and Dragons
